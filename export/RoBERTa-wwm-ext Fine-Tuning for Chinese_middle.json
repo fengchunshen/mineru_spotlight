@@ -1,0 +1,2819 @@
+{
+    "pdf_info": [
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        109,
+                        110,
+                        501,
+                        153
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                109,
+                                110,
+                                501,
+                                153
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        109,
+                                        110,
+                                        501,
+                                        153
+                                    ],
+                                    "type": "text",
+                                    "content": "RoBERTa- www- ext Fine- Tuning for Chinese Text Classification"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                },
+                {
+                    "bbox": [
+                        203,
+                        168,
+                        405,
+                        209
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                203,
+                                168,
+                                405,
+                                209
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        203,
+                                        168,
+                                        405,
+                                        209
+                                    ],
+                                    "type": "text",
+                                    "content": "Zhuo Xu  \nThe Ohio State University - Columbus  \nxu.3614@osu.edu"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2
+                },
+                {
+                    "bbox": [
+                        281,
+                        262,
+                        328,
+                        273
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                281,
+                                262,
+                                328,
+                                273
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        281,
+                                        262,
+                                        328,
+                                        273
+                                    ],
+                                    "type": "text",
+                                    "content": "Abstract"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 3
+                },
+                {
+                    "bbox": [
+                        113,
+                        279,
+                        494,
+                        472
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                113,
+                                279,
+                                494,
+                                472
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        113,
+                                        279,
+                                        494,
+                                        472
+                                    ],
+                                    "type": "text",
+                                    "content": "Bidirectional Encoder Representations from Transformers (BERT) have shown to be a promising way to dramatically improve the performance across various Natural Language Processing tasks Devlin et al. (2019). Meanwhile, progress made over the past few years by various Neural Network has also proved the effectiveness of Neural Network in the field of Natural Language Processing. In this project, RoBERTa-wwm-extCui et al. (2019) pre-train language model was adopted and fine-tuned for Chinese text classification. The models were able to classify Chinese texts into two categories, containing descriptions of legal behavior and descriptions of illegal behavior. Four different models are also proposed in the paper. Those models will use RoBERTa-wwm-ext as their embedding layer and feed the embedding into different neural networks. The motivation behind proposing these models is straightforward. By introducing complex output layer architecture, the overall performance of the models could be improved. All the models were trained on a dataset derived from Chinese public court records, and the performance of different models were compared. The experiment shows that the performance of proposed models failed to beat the original RoBERTa-wwm-ext model in terms of accuracy and training efficiency."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 4
+                },
+                {
+                    "bbox": [
+                        87,
+                        508,
+                        208,
+                        525
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                87,
+                                508,
+                                208,
+                                525
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        87,
+                                        508,
+                                        208,
+                                        525
+                                    ],
+                                    "type": "text",
+                                    "content": "1 Introduction"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 5
+                },
+                {
+                    "bbox": [
+                        86,
+                        543,
+                        522,
+                        699
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                543,
+                                522,
+                                699
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        543,
+                                        522,
+                                        699
+                                    ],
+                                    "type": "text",
+                                    "content": "With the increasing use of social media in recent years, the number of cybercrime cases are growing. Nowadays, there are multitudinous social platforms with large number of participants, making the supervision of cybercrime very difficult. In China, the traditional way to monitor cybercrime is to hire a group of people and manually identify these illegal behaviors online. However, with more than 900,000,000 citizens connected to the internet, this type of monitoring system would require big budgets and huge staff. Therefore, a model that can automatically identify the content containing potential illegal behaviors is much-needed."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        14,
+                        212,
+                        35,
+                        560
+                    ],
+                    "type": "aside_text",
+                    "angle": 270,
+                    "lines": [
+                        {
+                            "bbox": [
+                                14,
+                                212,
+                                35,
+                                560
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        14,
+                                        212,
+                                        35,
+                                        560
+                                    ],
+                                    "type": "text",
+                                    "content": "arXiv:2103.00492v1 [cs.CL] 24 Feb 2021"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        308,
+                        735
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                308,
+                                735
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        308,
+                                        735
+                                    ],
+                                    "type": "text",
+                                    "content": "1"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 7
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 0
+        },
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        86,
+                        72,
+                        522,
+                        289
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                72,
+                                522,
+                                289
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        522,
+                                        289
+                                    ],
+                                    "type": "text",
+                                    "content": "The models use RoBERTa-wwm-ext instead of the original BERT because RoBERTa-wwm-ext will bring more performance gain. RoBERTa-wwm-ext model was believed to have two major optimizations compared to the original BERT will be beneficial to the classification task. The first one is the use of RoBERTa pre-trained model. Liu et al. (2019) believe that the original BERT training is inadequate. They conducted a complex study, including careful evaluation of the effects of hyperparameters and size of training set on the BERT pre-training model, and optimized the model based on their finding. The second one is pre-trained the model with whole word masking for Chinese. Since the models will be applied to classify Chinese text, whole-word Masking will allow the models to incorporate Chinese language scenarios and apply them to knowledge graphs to provide more information about Chinese semantics."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "bbox": [
+                        103,
+                        297,
+                        324,
+                        310
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                103,
+                                297,
+                                324,
+                                310
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        103,
+                                        297,
+                                        324,
+                                        310
+                                    ],
+                                    "type": "text",
+                                    "content": "The contributions of this paper are as follow:"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                },
+                {
+                    "bbox": [
+                        102,
+                        324,
+                        518,
+                        455
+                    ],
+                    "type": "list",
+                    "angle": 0,
+                    "index": 5,
+                    "blocks": [
+                        {
+                            "bbox": [
+                                102,
+                                324,
+                                518,
+                                357
+                            ],
+                            "type": "text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        324,
+                                        518,
+                                        357
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                102,
+                                                324,
+                                                518,
+                                                357
+                                            ],
+                                            "type": "text",
+                                            "content": "- Four different models were proposed to fine-tune the pre-trained RoBERTa-wwm-ext model to classify whether a piece of text describes illegal behavior."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                102,
+                                373,
+                                518,
+                                406
+                            ],
+                            "type": "text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        373,
+                                        518,
+                                        406
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                102,
+                                                373,
+                                                518,
+                                                406
+                                            ],
+                                            "type": "text",
+                                            "content": "- After researching the fine-tuning method for BERT, pre-process long text was adopted because the models could yield better performance."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                102,
+                                422,
+                                518,
+                                455
+                            ],
+                            "type": "text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        422,
+                                        518,
+                                        455
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                102,
+                                                422,
+                                                518,
+                                                455
+                                            ],
+                                            "type": "text",
+                                            "content": "- Training hyper-parameters were fine-tuned to achieve a balance of training time and performance."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 4
+                        }
+                    ],
+                    "sub_type": "text"
+                },
+                {
+                    "bbox": [
+                        86,
+                        483,
+                        240,
+                        502
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                483,
+                                240,
+                                502
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        483,
+                                        240,
+                                        502
+                                    ],
+                                    "type": "text",
+                                    "content": "2 Data Processing"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6
+                },
+                {
+                    "bbox": [
+                        86,
+                        517,
+                        521,
+                        552
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                517,
+                                521,
+                                552
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        517,
+                                        521,
+                                        552
+                                    ],
+                                    "type": "text",
+                                    "content": "The raw date of training set was obtained from public court record. The record is available at the following link:"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 7
+                },
+                {
+                    "bbox": [
+                        113,
+                        567,
+                        289,
+                        578
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                113,
+                                567,
+                                289,
+                                578
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        113,
+                                        567,
+                                        289,
+                                        578
+                                    ],
+                                    "type": "text",
+                                    "content": "https://susong.tianyancha.com/"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 8
+                },
+                {
+                    "bbox": [
+                        86,
+                        594,
+                        521,
+                        708
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                594,
+                                521,
+                                708
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        594,
+                                        521,
+                                        708
+                                    ],
+                                    "type": "text",
+                                    "content": "The data processing steps are as follow: First, all samples were extracted from raw data. Then sentences containing illegal behaviors were manually labeled with 1. Those sentences will become the positive example dataset. The rest of sentences were labeled with 0 and used as negative examples. Positive and negative samples were then randomly mixed. In total, the dataset contained 6755 samples. Datasets were then be randomly split into test set and training set, where test set account for "
+                                },
+                                {
+                                    "bbox": [
+                                        86,
+                                        594,
+                                        521,
+                                        708
+                                    ],
+                                    "type": "inline_equation",
+                                    "content": "20\\%"
+                                },
+                                {
+                                    "bbox": [
+                                        86,
+                                        594,
+                                        521,
+                                        708
+                                    ],
+                                    "type": "text",
+                                    "content": " and the rest of data will become a training set."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 9
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        308,
+                        736
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                308,
+                                736
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        308,
+                                        736
+                                    ],
+                                    "type": "text",
+                                    "content": "2"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 10
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 1
+        },
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        86,
+                        72,
+                        521,
+                        126
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                72,
+                                521,
+                                126
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        521,
+                                        126
+                                    ],
+                                    "type": "text",
+                                    "content": "The training set was further partitioned into a new training set and a validation set. The new training set will contain "
+                                },
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        521,
+                                        126
+                                    ],
+                                    "type": "inline_equation",
+                                    "content": "64\\%"
+                                },
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        521,
+                                        126
+                                    ],
+                                    "type": "text",
+                                    "content": " of the whole dataset, and validation set will contain "
+                                },
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        521,
+                                        126
+                                    ],
+                                    "type": "inline_equation",
+                                    "content": "16\\%"
+                                },
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        521,
+                                        126
+                                    ],
+                                    "type": "text",
+                                    "content": " of the whole dataset."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "bbox": [
+                        86,
+                        154,
+                        529,
+                        201
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                154,
+                                529,
+                                201
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        154,
+                                        529,
+                                        201
+                                    ],
+                                    "type": "text",
+                                    "content": "3 RoBERTa-wwm-ext model Fine-Tuning for Chinese Text Classification"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                },
+                {
+                    "bbox": [
+                        86,
+                        220,
+                        212,
+                        237
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                220,
+                                212,
+                                237
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        220,
+                                        212,
+                                        237
+                                    ],
+                                    "type": "text",
+                                    "content": "3.1 Methodology"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2
+                },
+                {
+                    "bbox": [
+                        86,
+                        251,
+                        522,
+                        326
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                251,
+                                522,
+                                326
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        251,
+                                        522,
+                                        326
+                                    ],
+                                    "type": "text",
+                                    "content": "For the baseline model, the pre-trained RoBerta-wwm-ext was fine-tuned using the data set mentioned above. The output from the transformers was fed into a fully connected classification layer and then the model will then output whether the classification result is right or wrong."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 3
+                },
+                {
+                    "bbox": [
+                        86,
+                        332,
+                        523,
+                        449
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                332,
+                                523,
+                                449
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        332,
+                                        523,
+                                        449
+                                    ],
+                                    "type": "text",
+                                    "content": "In terms of the four models proposed, the output from the transformer were feed into four different types of Neural Network. Those Neural Network includes a Convolutional Neural Network Kim (2014), a Recurrent Neural Network Liu et al. (2016), a Recurrent Convolutional Neural Network Lai, Xu, Liu, and Zhao (Lai et al.), and a Deep Pyramid Convolutional Neural Network Johnson and Zhang (2017). All the models were implemented using Pytorch."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 4
+                },
+                {
+                    "bbox": [
+                        86,
+                        471,
+                        529,
+                        514
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                471,
+                                529,
+                                514
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        471,
+                                        529,
+                                        514
+                                    ],
+                                    "type": "text",
+                                    "content": "3.2 Model Fine-Tuning with Convolutional Neural Network as classification layer"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 5
+                },
+                {
+                    "bbox": [
+                        86,
+                        527,
+                        521,
+                        704
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                527,
+                                521,
+                                704
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        527,
+                                        521,
+                                        704
+                                    ],
+                                    "type": "text",
+                                    "content": "In these models, the incoming text data will be padded into the same length, and then it will be fed into pre-trained RoBerta-wwm-ext encoder to get the words embedding. None of the layers of the pre-trained RoBerta-wwm-ext model were frozen in the training process. The embedding will then be feed into a Convolutional Neural Network. The convolution layer has three different sizes of convolutions kernels which are 2, 3 and 4. For each kernel size, there are 100 convolution kernels. This allows the model to extract 2-gram, 3-gram, 4-gram feature from embedding. Those features will be feed into a max-pooling layer to filter out unimportant information. After that, those three feature maps will be concatenated and fed into a linear fully connected layer and output the classification result. The dropout"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        308,
+                        736
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                308,
+                                736
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        308,
+                                        736
+                                    ],
+                                    "type": "text",
+                                    "content": "3"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 7
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 2
+        },
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        86,
+                        110,
+                        522,
+                        153
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                110,
+                                522,
+                                153
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        110,
+                                        522,
+                                        153
+                                    ],
+                                    "type": "text",
+                                    "content": "3.3 Model Fine-Tuning with Recurrent Neural Network as classification layer"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                },
+                {
+                    "bbox": [
+                        86,
+                        166,
+                        523,
+                        323
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                166,
+                                523,
+                                323
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        166,
+                                        523,
+                                        323
+                                    ],
+                                    "type": "text",
+                                    "content": "In this model, the incoming text data will also be padded into a certain length, and then it will be feed into pre-trained RoBerta-wwm-ext encoder to get the words embedding. None of the layers of the pre-trained RoBerta-wwm-ext model were frozen in the training process as well. The embedding would be fed into a Recurrent Neural Network which consist of two layers of Bidirectional long short-term memory (BiLSTM) with a hidden size of 768. After that, the last hidden state from BiLSTM layer would be fed into a linear fully connected layer and output the classification result. The dropout rate set for the Recurrent Neural Network is 0.1.Liu et al. (2016)"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2
+                },
+                {
+                    "bbox": [
+                        86,
+                        346,
+                        523,
+                        389
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                346,
+                                523,
+                                389
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        346,
+                                        523,
+                                        389
+                                    ],
+                                    "type": "text",
+                                    "content": "3.4 Model Fine-Tuning with Recurrent Convolutional Neural Network as classification layer"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 3
+                },
+                {
+                    "bbox": [
+                        86,
+                        402,
+                        523,
+                        619
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                402,
+                                523,
+                                619
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        402,
+                                        523,
+                                        619
+                                    ],
+                                    "type": "text",
+                                    "content": "In this model, the incoming text data will also be padded into length of certain, and then it will be feed into a pre-trained RoBerta-wwm-ext encoder to get the words embedding. The RoBerta-wwm-ext layers in this model would not be frozen either. The embedding produced by the encoder would be fed into a Recurrent Neural Network which consists of two layers of Bidirectional long short-term memory (BiLSTM) with a hidden size of 768. After that, the output from BiLSTM layer and the embedding produced by RoBerta-wwm-ext were concatenated and fed into a ReLU activation layer. The output of activation layer would be fed into a max-pooling layer to filter out the noise. The output from max-pooling layer will then be fed into a linear fully connected layer and output the classification result. The dropout rate for the Recurrent Convolutional Neural Network was set to be 0.1.Lai, Xu, Liu, and Zhao (Lai et al.)"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 4
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        86,
+                        72,
+                        397,
+                        87
+                    ],
+                    "type": "header",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                72,
+                                397,
+                                87
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        397,
+                                        87
+                                    ],
+                                    "type": "text",
+                                    "content": "rate set for the Convolutional Neural Network is 0.1.Kim (2014)"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        309,
+                        736
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                309,
+                                736
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        309,
+                                        736
+                                    ],
+                                    "type": "text",
+                                    "content": "4"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 5
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 3
+        },
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        86,
+                        70,
+                        522,
+                        113
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                70,
+                                522,
+                                113
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        70,
+                                        522,
+                                        113
+                                    ],
+                                    "type": "text",
+                                    "content": "3.5 Model Fine-Tuning with Deep Pyramid Convolutional Neural Network as classification layer"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "bbox": [
+                        86,
+                        125,
+                        523,
+                        363
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                125,
+                                523,
+                                363
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        125,
+                                        523,
+                                        363
+                                    ],
+                                    "type": "text",
+                                    "content": "In this model, the incoming text data will be padded into a certain length, and then it will be feed into pre-trained RoBerta-wwm-ext encoder to get the words embedding. All layers of the models, including the RoBerta-wwm-ext encoder, were trained. The embedding will then be feed into a Deep Pyramid Convolutional Neural Network. The embedding will first go through a process called region embedding. In this process, the embedding would be fed into a convolution layer that has 250 kernels, and each kernel's size is 3. In order to keep the length of sequence unchanged, the output will be padded and fed into a ReLU activation layer. After that, it would be fed into a convolution layer. The output of this convolution layer will go through being padded, feeding into the ReLU activation layer, and convolution layer again. After the process is completed, the convolution layer's output will then be fed into following process, and this process would be repeated several times. The process has several steps:"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                },
+                {
+                    "bbox": [
+                        102,
+                        377,
+                        520,
+                        487
+                    ],
+                    "type": "list",
+                    "angle": 0,
+                    "index": 5,
+                    "blocks": [
+                        {
+                            "bbox": [
+                                102,
+                                377,
+                                520,
+                                411
+                            ],
+                            "type": "text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        377,
+                                        520,
+                                        411
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                102,
+                                                377,
+                                                520,
+                                                411
+                                            ],
+                                            "type": "text",
+                                            "content": "- The input will go through a Max_pooling layer with a kernel with size of 3 and stride of 2, which essentially halves the length of input."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                102,
+                                426,
+                                520,
+                                459
+                            ],
+                            "type": "text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        426,
+                                        520,
+                                        459
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                102,
+                                                426,
+                                                520,
+                                                459
+                                            ],
+                                            "type": "text",
+                                            "content": "- Then the output will be subject to two convolution layer's operation with 250 kernels of size 3 in each layer."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                102,
+                                474,
+                                466,
+                                487
+                            ],
+                            "type": "text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        474,
+                                        466,
+                                        487
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                102,
+                                                474,
+                                                466,
+                                                487
+                                            ],
+                                            "type": "text",
+                                            "content": "- A residual connection of outputs from previous two steps was conducted."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 4
+                        }
+                    ],
+                    "sub_type": "text"
+                },
+                {
+                    "type": "image",
+                    "bbox": [
+                        105,
+                        498,
+                        325,
+                        706
+                    ],
+                    "blocks": [
+                        {
+                            "bbox": [
+                                105,
+                                498,
+                                325,
+                                706
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        498,
+                                        325,
+                                        706
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                105,
+                                                498,
+                                                325,
+                                                706
+                                            ],
+                                            "type": "image",
+                                            "image_path": "7db15c3da938e380130d294ce8c3c125691da265450448d63d2930c2da461b71.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 6,
+                            "angle": 0,
+                            "type": "image_body"
+                        }
+                    ],
+                    "index": 6
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        308,
+                        735
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                308,
+                                735
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        308,
+                                        735
+                                    ],
+                                    "type": "text",
+                                    "content": "5"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 7
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 4
+        },
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        86,
+                        72,
+                        525,
+                        128
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                72,
+                                525,
+                                128
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        525,
+                                        128
+                                    ],
+                                    "type": "text",
+                                    "content": "The output from the process will then be fed into a linearly connected layer and output the classification result. The dropout rate for the Deep Pyramid Convolutional Neural Network was set as 0.1. Johnson and Zhang (2017)"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "bbox": [
+                        86,
+                        152,
+                        515,
+                        171
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                152,
+                                515,
+                                171
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        152,
+                                        515,
+                                        171
+                                    ],
+                                    "type": "text",
+                                    "content": "3.6 Model Fine-Tuning with fully connected classification layer"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                },
+                {
+                    "bbox": [
+                        86,
+                        182,
+                        523,
+                        256
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                182,
+                                523,
+                                256
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        182,
+                                        523,
+                                        256
+                                    ],
+                                    "type": "text",
+                                    "content": "This model will act as the baseline model of the experiment. The incoming text data will be padded into a certain length, and then it will be feed into pre-trained RoBerta-wwm-ext encoder. The output of the encoder will be fed into a linear fully connected layer and output the classification result."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2
+                },
+                {
+                    "bbox": [
+                        86,
+                        283,
+                        204,
+                        303
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                283,
+                                204,
+                                303
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        283,
+                                        204,
+                                        303
+                                    ],
+                                    "type": "text",
+                                    "content": "4 Experiment"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 3
+                },
+                {
+                    "bbox": [
+                        86,
+                        320,
+                        282,
+                        338
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                320,
+                                282,
+                                338
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        320,
+                                        282,
+                                        338
+                                    ],
+                                    "type": "text",
+                                    "content": "4.1 Experiment Enviorment"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 4
+                },
+                {
+                    "bbox": [
+                        86,
+                        350,
+                        523,
+                        406
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                350,
+                                523,
+                                406
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        350,
+                                        523,
+                                        406
+                                    ],
+                                    "type": "text",
+                                    "content": "All of the model training was conducted on a node of OSC Owens Cluster. Each node has 28 CPU cores from Intel Xeon E5-2680 v4, 128 GB of memory, and one NVIDIA Tesla P100 GPU with 16GB memory. CUDA10.2.89 was also enabled to accelerate training process."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 5
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        198,
+                        414,
+                        411,
+                        539
+                    ],
+                    "blocks": [
+                        {
+                            "bbox": [
+                                198,
+                                414,
+                                411,
+                                539
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        198,
+                                        414,
+                                        411,
+                                        539
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                198,
+                                                414,
+                                                411,
+                                                539
+                                            ],
+                                            "type": "table",
+                                            "html": "<table><tr><td>Training time</td><td>Batch Size</td><td>Model</td></tr><tr><td>00:04:02</td><td>64</td><td>Baseline</td></tr><tr><td>00:04:15</td><td>64</td><td>CNN</td></tr><tr><td>00:05:42</td><td>64</td><td>RNN</td></tr><tr><td>00:03:46</td><td>64</td><td>DPCNN</td></tr><tr><td>00:04:10</td><td>64</td><td>RCNN</td></tr></table>",
+                                            "image_path": "c4a25bc510c2b00a6f63f1d0c04f75a37b2f571f4903159f709d61abbf18dd52.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 6,
+                            "angle": 0,
+                            "type": "table_body"
+                        },
+                        {
+                            "bbox": [
+                                86,
+                                548,
+                                522,
+                                583
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        548,
+                                        522,
+                                        583
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                86,
+                                                548,
+                                                522,
+                                                583
+                                            ],
+                                            "type": "text",
+                                            "content": "Table 1: Training time for running 10 epochs. (Model types are denoted by the classification layer it adopted)"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 7,
+                            "angle": 0,
+                            "type": "table_caption"
+                        }
+                    ],
+                    "index": 6
+                },
+                {
+                    "bbox": [
+                        86,
+                        619,
+                        179,
+                        637
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                619,
+                                179,
+                                637
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        619,
+                                        179,
+                                        637
+                                    ],
+                                    "type": "text",
+                                    "content": "4.2 Training"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 8
+                },
+                {
+                    "bbox": [
+                        86,
+                        649,
+                        523,
+                        684
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                649,
+                                523,
+                                684
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        649,
+                                        523,
+                                        684
+                                    ],
+                                    "type": "text",
+                                    "content": "Table 1 shows the training time for training these proposed models with batch size 64. It could be observed that the training time for these models did not vary by a notable amount,"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 9
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        309,
+                        736
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                309,
+                                736
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        309,
+                                        736
+                                    ],
+                                    "type": "text",
+                                    "content": "6"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 10
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 5
+        },
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        86,
+                        72,
+                        523,
+                        228
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                72,
+                                523,
+                                228
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        72,
+                                        523,
+                                        228
+                                    ],
+                                    "type": "text",
+                                    "content": "except for the case of Recurrent Neural Network as the classifier layer of RoBERTa-wwm-ext. In which case, the model took a little bit longer to train than other models proposed. Table 2 3 5 4 6 shows the training time of different batch size for different model. It shows that train the model with smaller batch size did not improve accuracy very much. In this case, larger batch size is preferred because similar performance could be achieved in a much shorter training time. Due to memory constraint of the GPU, experiments with larger batch size were not completed, as CUDA out of memory error was encountered when trying to train the model."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        198,
+                        236,
+                        411,
+                        300
+                    ],
+                    "blocks": [
+                        {
+                            "bbox": [
+                                198,
+                                236,
+                                411,
+                                300
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        198,
+                                        236,
+                                        411,
+                                        300
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                198,
+                                                236,
+                                                411,
+                                                300
+                                            ],
+                                            "type": "table",
+                                            "html": "<table><tr><td>Training time</td><td>Batch Size</td><td>Val Acc</td></tr><tr><td>00:04:02</td><td>64</td><td>95.31%</td></tr><tr><td>00:12:58</td><td>16</td><td>96.58%</td></tr></table>",
+                                            "image_path": "fd76c169fb96fc74e5feda369e7db3fb7ab31cc3757b0846afa57181648eb3d4.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 1,
+                            "angle": 0,
+                            "type": "table_body"
+                        },
+                        {
+                            "bbox": [
+                                153,
+                                308,
+                                455,
+                                321
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        153,
+                                        308,
+                                        455,
+                                        321
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                153,
+                                                308,
+                                                455,
+                                                321
+                                            ],
+                                            "type": "text",
+                                            "content": "Table 2: Training time for baseline model running 10 epochs."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 2,
+                            "angle": 0,
+                            "type": "table_caption"
+                        }
+                    ],
+                    "index": 1
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        198,
+                        342,
+                        411,
+                        407
+                    ],
+                    "blocks": [
+                        {
+                            "bbox": [
+                                198,
+                                342,
+                                411,
+                                407
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        198,
+                                        342,
+                                        411,
+                                        407
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                198,
+                                                342,
+                                                411,
+                                                407
+                                            ],
+                                            "type": "table",
+                                            "html": "<table><tr><td>Training time</td><td>Batch Size</td><td>Val Acc</td></tr><tr><td>00:04:15</td><td>64</td><td>94.36%</td></tr><tr><td>00:13:12</td><td>16</td><td>94.62%</td></tr></table>",
+                                            "image_path": "a556fe38fe0292befdfd810e7fa3834ee4d5dd088470a79d57ef57d5bd5911c3.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 3,
+                            "angle": 0,
+                            "type": "table_body"
+                        },
+                        {
+                            "bbox": [
+                                115,
+                                414,
+                                492,
+                                428
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        115,
+                                        414,
+                                        492,
+                                        428
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                115,
+                                                414,
+                                                492,
+                                                428
+                                            ],
+                                            "type": "text",
+                                            "content": "Table 3: Training time for RoBerta-wwm-ext CNN model running 10 epochs."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 4,
+                            "angle": 0,
+                            "type": "table_caption"
+                        }
+                    ],
+                    "index": 3
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        198,
+                        449,
+                        411,
+                        513
+                    ],
+                    "blocks": [
+                        {
+                            "bbox": [
+                                198,
+                                449,
+                                411,
+                                513
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        198,
+                                        449,
+                                        411,
+                                        513
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                198,
+                                                449,
+                                                411,
+                                                513
+                                            ],
+                                            "type": "table",
+                                            "html": "<table><tr><td>Training time</td><td>Batch Size</td><td>Val Acc</td></tr><tr><td>00:04:10</td><td>64</td><td>94.14%</td></tr><tr><td>00:12:52</td><td>16</td><td>94.68%</td></tr></table>",
+                                            "image_path": "088c5161189e5251ccea33899470b2c51a3f8c71280dd01d3ed3a3335422f03c.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 5,
+                            "angle": 0,
+                            "type": "table_body"
+                        },
+                        {
+                            "bbox": [
+                                111,
+                                521,
+                                496,
+                                534
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        111,
+                                        521,
+                                        496,
+                                        534
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                111,
+                                                521,
+                                                496,
+                                                534
+                                            ],
+                                            "type": "text",
+                                            "content": "Table 4: Training time for RoBerta-wwm-ext RCNN model running 10 epochs."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 6,
+                            "angle": 0,
+                            "type": "table_caption"
+                        }
+                    ],
+                    "index": 5
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        198,
+                        556,
+                        411,
+                        620
+                    ],
+                    "blocks": [
+                        {
+                            "bbox": [
+                                198,
+                                556,
+                                411,
+                                620
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        198,
+                                        556,
+                                        411,
+                                        620
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                198,
+                                                556,
+                                                411,
+                                                620
+                                            ],
+                                            "type": "table",
+                                            "html": "<table><tr><td>Training time</td><td>Batch Size</td><td>Val Acc</td></tr><tr><td>00:03:46</td><td>64</td><td>92.38%</td></tr><tr><td>00:12:43</td><td>16</td><td>93.36%</td></tr></table>",
+                                            "image_path": "7c3d245fedf47e052cb2d1d28e99608a1a1a0f0b551771932940aa7267fa8476.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 7,
+                            "angle": 0,
+                            "type": "table_body"
+                        },
+                        {
+                            "bbox": [
+                                107,
+                                628,
+                                500,
+                                641
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        107,
+                                        628,
+                                        500,
+                                        641
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                107,
+                                                628,
+                                                500,
+                                                641
+                                            ],
+                                            "type": "text",
+                                            "content": "Table 5: Training time for RoBerta-wwm-ext DPCNN model running 10 epochs."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 8,
+                            "angle": 0,
+                            "type": "table_caption"
+                        }
+                    ],
+                    "index": 7
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        308,
+                        735
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                308,
+                                735
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        308,
+                                        735
+                                    ],
+                                    "type": "text",
+                                    "content": "7"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 9
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 6
+        },
+        {
+            "para_blocks": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        198,
+                        70,
+                        411,
+                        135
+                    ],
+                    "blocks": [
+                        {
+                            "bbox": [
+                                198,
+                                70,
+                                411,
+                                135
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        198,
+                                        70,
+                                        411,
+                                        135
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                198,
+                                                70,
+                                                411,
+                                                135
+                                            ],
+                                            "type": "table",
+                                            "html": "<table><tr><td>Training time</td><td>Batch Size</td><td>Val Acc</td></tr><tr><td>00:05:42</td><td>64</td><td>95.03%</td></tr><tr><td>00:13:19</td><td>16</td><td>94.63%</td></tr></table>",
+                                            "image_path": "a4ff94378b0647aa1a3b010ee90b29996a5449d4c59a61ac3ed779ce37ec9361.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 0,
+                            "angle": 0,
+                            "type": "table_body"
+                        },
+                        {
+                            "bbox": [
+                                115,
+                                142,
+                                493,
+                                156
+                            ],
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        115,
+                                        142,
+                                        493,
+                                        156
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                115,
+                                                142,
+                                                493,
+                                                156
+                                            ],
+                                            "type": "text",
+                                            "content": "Table 6: Training time for RoBerta-wwm-ext RNN model running 10 epochs."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 1,
+                            "angle": 0,
+                            "type": "table_caption"
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "bbox": [
+                        86,
+                        173,
+                        210,
+                        188
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                173,
+                                210,
+                                188
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        173,
+                                        210,
+                                        188
+                                    ],
+                                    "type": "text",
+                                    "content": "4.3 Performance"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2
+                },
+                {
+                    "bbox": [
+                        86,
+                        202,
+                        522,
+                        318
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                202,
+                                522,
+                                318
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        202,
+                                        522,
+                                        318
+                                    ],
+                                    "type": "text",
+                                    "content": "Performance wise, Table 2 3 5 4 6 shows that the models proposed weren't able to excels the baseline RoBERTa-wwm-ext model. In terms of accuracy, none of the models was able to present superiority over the RoBERTa-wwm-ext model used as base line, except when Recurrent Neural Network as the classifier layer of RoBERTa-wwm-ext the validation accuracy came very close to the performance of the baseline model. In terms of training time, the proposed models also failed to complete training in a shorter time."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 3
+                },
+                {
+                    "bbox": [
+                        86,
+                        345,
+                        202,
+                        361
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                345,
+                                202,
+                                361
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        345,
+                                        202,
+                                        361
+                                    ],
+                                    "type": "text",
+                                    "content": "5 Conclusion"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 4
+                },
+                {
+                    "bbox": [
+                        86,
+                        380,
+                        522,
+                        537
+                    ],
+                    "type": "text",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                86,
+                                380,
+                                522,
+                                537
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        380,
+                                        522,
+                                        537
+                                    ],
+                                    "type": "text",
+                                    "content": "In this paper, four different models to fine-tune RoBERTa-wwm-ext were proposed. During the experiments, the performance of the RoBERTa-wwm-ext encoder was found to be very strong. In the proposed models, RoBERTa-wwm-ext was adopted as embedding layer, and the embedding would be fed into four different types of neural networks. These neural networks include Convolutional Neural Network, Deep Pyramid Convolutional Neural Network, Recurrent Convolutional Neural Network, and Recurrent Neural Network. Those models with neural network as output layers failed to outperform the baseline model in accuracy and training efficiency."
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 5
+                },
+                {
+                    "bbox": [
+                        87,
+                        554,
+                        178,
+                        571
+                    ],
+                    "type": "title",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                87,
+                                554,
+                                178,
+                                571
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        87,
+                                        554,
+                                        178,
+                                        571
+                                    ],
+                                    "type": "text",
+                                    "content": "References"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6
+                },
+                {
+                    "bbox": [
+                        86,
+                        582,
+                        523,
+                        687
+                    ],
+                    "type": "list",
+                    "angle": 0,
+                    "index": 9,
+                    "blocks": [
+                        {
+                            "bbox": [
+                                86,
+                                582,
+                                521,
+                                609
+                            ],
+                            "type": "ref_text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        86,
+                                        582,
+                                        521,
+                                        609
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                86,
+                                                582,
+                                                521,
+                                                609
+                                            ],
+                                            "type": "text",
+                                            "content": "Cui, Y., W. Che, T. Liu, B. Qin, Z. Yang, S. Wang, and G. Hu (2019). Pre-training with whole word masking for chinese bert."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 7
+                        },
+                        {
+                            "bbox": [
+                                87,
+                                617,
+                                523,
+                                687
+                            ],
+                            "type": "ref_text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        87,
+                                        617,
+                                        523,
+                                        687
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                87,
+                                                617,
+                                                523,
+                                                687
+                                            ],
+                                            "type": "text",
+                                            "content": "Devlin, J., M.-W. Chang, K. Lee, and K. Toutanova (2019, June). BERT: Pre-training of deep bidirectional transformers for language understanding. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), Minneapolis, Minnesota, pp. 4171-4186. Association for Computational Linguistics."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 8
+                        }
+                    ],
+                    "sub_type": "ref_text"
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        309,
+                        736
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                309,
+                                736
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        309,
+                                        736
+                                    ],
+                                    "type": "text",
+                                    "content": "8"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 10
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 7
+        },
+        {
+            "para_blocks": [
+                {
+                    "bbox": [
+                        88,
+                        72,
+                        523,
+                        271
+                    ],
+                    "type": "list",
+                    "angle": 0,
+                    "index": 5,
+                    "blocks": [
+                        {
+                            "bbox": [
+                                88,
+                                72,
+                                523,
+                                127
+                            ],
+                            "type": "ref_text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        88,
+                                        72,
+                                        523,
+                                        127
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                88,
+                                                72,
+                                                523,
+                                                127
+                                            ],
+                                            "type": "text",
+                                            "content": "Johnson, R. and T. Zhang (2017, July). Deep pyramid convolutional neural networks for text categorization. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), Vancouver, Canada, pp. 562-570. Association for Computational Linguistics."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 0
+                        },
+                        {
+                            "bbox": [
+                                88,
+                                135,
+                                521,
+                                163
+                            ],
+                            "type": "ref_text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        88,
+                                        135,
+                                        521,
+                                        163
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                88,
+                                                135,
+                                                521,
+                                                163
+                                            ],
+                                            "type": "text",
+                                            "content": "Kim, Y. (2014). Convolutional neural networks for sentence classification. CoRR abs/1408.5882."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "bbox": [
+                                88,
+                                171,
+                                521,
+                                200
+                            ],
+                            "type": "ref_text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        88,
+                                        171,
+                                        521,
+                                        200
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                88,
+                                                171,
+                                                521,
+                                                200
+                                            ],
+                                            "type": "text",
+                                            "content": "Lai, S., L. Xu, K. Liu, and J. Zhao. Recurrent convolutional neural networks for text classification. In Proceedings of the Twenty-Ninth AAAI Conference on Artificial Intelligence."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                88,
+                                208,
+                                520,
+                                235
+                            ],
+                            "type": "ref_text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        88,
+                                        208,
+                                        520,
+                                        235
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                88,
+                                                208,
+                                                520,
+                                                235
+                                            ],
+                                            "type": "text",
+                                            "content": "Liu, P., X. Qiu, and X. Huang (2016). Recurrent neural network for text classification with multi-task learning. CoRR abs/1605.05101."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                88,
+                                243,
+                                521,
+                                271
+                            ],
+                            "type": "ref_text",
+                            "angle": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        88,
+                                        243,
+                                        521,
+                                        271
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                88,
+                                                243,
+                                                521,
+                                                271
+                                            ],
+                                            "type": "text",
+                                            "content": "Liu, Y., M. Ott, N. Goyal, J. Du, M. Joshi, D. Chen, O. Levy, M. Lewis, L. Zettlemoyer, and V. Stoyanov (2019). Roberta: A robustly optimized bert pretraining approach."
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 4
+                        }
+                    ],
+                    "sub_type": "ref_text"
+                }
+            ],
+            "discarded_blocks": [
+                {
+                    "bbox": [
+                        301,
+                        726,
+                        308,
+                        735
+                    ],
+                    "type": "page_number",
+                    "angle": 0,
+                    "lines": [
+                        {
+                            "bbox": [
+                                301,
+                                726,
+                                308,
+                                735
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        301,
+                                        726,
+                                        308,
+                                        735
+                                    ],
+                                    "type": "text",
+                                    "content": "9"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6
+                }
+            ],
+            "page_size": [
+                612,
+                792
+            ],
+            "page_idx": 8
+        }
+    ],
+    "_backend": "vlm",
+    "_version_name": "2.5.0"
+}

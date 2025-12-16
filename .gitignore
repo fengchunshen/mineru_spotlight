@@ -1,0 +1,40 @@
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Node / Vite (demo 前端)
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+.env
+.env.*
+.venv/
+pip-wheel-metadata/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+
+# 项目本地数据/配置
+*.db
+*.sqlite3
+mineru.local.json*
+mineru_tianshu.db
+
+

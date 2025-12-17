@@ -8,58 +8,116 @@ import { Toolbar } from './components/Toolbar'
 import { useViewerStore } from './store'
 import debounce from 'lodash.debounce'
 
-const base = '/export'
-const url = (name: string) => `${base}/${encodeURI(name)}`
+type TaskAssets = {
+  pdf_url: string
+  content_list_url: string
+  full_md_link: string
+}
 
-const config: ViewerConfig = {
-  pdfUrl: url('RoBERTa-wwm-ext Fine-Tuning for Chinese_origin.pdf'),
-  contentListUrl: url('RoBERTa-wwm-ext Fine-Tuning for Chinese_content_list.json'),
-  markdownUrl: url('RoBERTa-wwm-ext Fine-Tuning for Chinese.md'),
-  imageBase: `${base}/images`,
-  bboxNormalizedTo: 1000,
+const DEFAULT_TASK_ASSETS: TaskAssets = {
+  pdf_url:
+    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/27893800-cd2e-459b-ab2e-721891df4a38/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13_origin.pdf',
+  content_list_url:
+    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/27893800-cd2e-459b-ab2e-721891df4a38/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13_content_list.json',
+  full_md_link:
+    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/27893800-cd2e-459b-ab2e-721891df4a38/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13.md',
+}
+
+// 将绝对地址转换为 Vite 代理地址，避免 CORS。保持路径编码。
+const toProxyUrl = (url: string) => {
+  const prefix = 'https://spotlight.shanghai-9.zos.ctyun.cn/'
+  const trimmed = url.startsWith(prefix) ? url.slice(prefix.length) : url
+  return `/api/proxy/spotlight/${encodeURI(trimmed)}`
+}
+
+const buildViewerConfig = (assets: TaskAssets): ViewerConfig => {
+  // 从 content_list_url 推断 images 目录
+  const imageBaseFromContentList = assets.content_list_url
+    .replace('_content_list.json', '')
+    .replace(/\/[^/]*$/, '/images')
+
+  return {
+    // 优先走代理，必要时在加载逻辑里回退直连
+    pdfUrl: toProxyUrl(assets.pdf_url),
+    contentListUrl: toProxyUrl(assets.content_list_url),
+    markdownUrl: toProxyUrl(assets.full_md_link),
+    imageBase: toProxyUrl(imageBaseFromContentList),
+    bboxNormalizedTo: 1000,
+  }
 }
 
 function App() {
+  const [taskIdInput, setTaskIdInput] = useState(
+    '27893800-cd2e-459b-ab2e-721891df4a38', // 默认示例，方便调试
+  )
+  const [config, setConfig] = useState<ViewerConfig>(() => buildViewerConfig(DEFAULT_TASK_ASSETS))
   const [items, setItems] = useState<ContentItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { activeId, setCurrentPage, setFilterTypes, setActiveId } = useViewerStore()
+  const { activeId, setCurrentPage, setFilterTypes } = useViewerStore()
   const pdfScrollRef = useRef<HTMLDivElement>(null)
   const mdScrollRef = useRef<HTMLDivElement>(null)
   const suppressScrollSyncRef = useRef(false)
   const suppressTimerRef = useRef<number | null>(null)
   const lastSyncedPageRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    const load = async () => {
+  const loadContentList = async (viewerConfig: ViewerConfig, rawAssets: TaskAssets) => {
+    let lastError: Error | null = null
+    // 先尝试代理，再回退直连
+    const urlsToTry = [viewerConfig.contentListUrl, encodeURI(rawAssets.content_list_url)]
+
+    for (const url of urlsToTry) {
       try {
-        const res = await fetch(config.contentListUrl)
+        const res = await fetch(url)
+
+        // 检查响应状态
+        if (!res.ok) {
+          throw new Error(`HTTP错误: ${res.status} ${res.statusText}\nURL: ${url}`)
+        }
+
         const data = (await res.json()) as any[]
         const mapped: ContentItem[] = data.map((item, idx) => {
+          // 后端有时会使用 "equation" 表示公式，这里统一归一到 "formula"
+          let type = item.type === 'equation' ? 'formula' : item.type
           let content = item.content ?? item.text
-          
+
           // 根据不同类型生成对应的markdown内容
           if (!content) {
-            switch (item.type) {
-              case 'image':
-                // image类型：使用img_path生成markdown图片引用
+            switch (type) {
+              case 'image': {
+                // image类型：使用img_path生成markdown图片引用，并在下方附上caption
+                // 使用纯 markdown 文本，保留公式解析能力；样式在 CSS 中通过 img 后的第一个段落选择器控制
                 if (item.img_path) {
-                  content = `![](${item.img_path})`
+                  const captions =
+                    item.image_caption && Array.isArray(item.image_caption)
+                      ? item.image_caption.join(' ')
+                      : ''
+                  content = captions
+                    ? `![](${item.img_path})\n\n${captions}`
+                    : `![](${item.img_path})`
                 }
                 break
-              
+              }
+
               case 'list':
                 // list类型：将list_items数组转换为markdown列表
                 if (item.list_items && Array.isArray(item.list_items)) {
-                  // 确保列表项之间有正确的格式，每个列表项单独一行
+                  // 转成标准 Markdown 列表：每项以 "- " 开头，保留可能存在的编号/符号
                   content = item.list_items
-                    .map(item => item.trim())
-                    .filter(item => item.length > 0)
+                    .map((raw: string) => raw.trim())
+                    .filter((t: string) => t.length > 0)
+                    .map((t: string) => {
+                      // 如果已经是 markdown 列表前缀，则直接返回
+                      if (/^([-*+]|\d+\.)\s+/.test(t)) {
+                        return t
+                      }
+                      return `- ${t}`
+                    })
                     .join('\n')
                 }
                 break
-              
-              case 'table':
+
+              case 'table': {
                 // table类型：使用table_body（HTML格式），并添加caption
                 const tableParts: string[] = []
                 if (item.table_caption && Array.isArray(item.table_caption) && item.table_caption.length > 0) {
@@ -71,20 +129,21 @@ function App() {
                   // 匹配第一个<tr>标签及其内容，将其中的<td>替换为<th>
                   tableBody = tableBody.replace(
                     /<tr>([\s\S]*?)<\/tr>/,
-                    (match, rowContent) => {
+                    (_match: string, rowContent: string) => {
                       // 将第一行中的所有<td>替换为<th>
                       const headerRow = rowContent.replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>')
                       return `<tr>${headerRow}</tr>`
-                    }
+                    },
                   )
                   tableParts.push(tableBody)
                 }
                 if (item.table_footnote && Array.isArray(item.table_footnote) && item.table_footnote.length > 0) {
-                  tableParts.push(...item.table_footnote.map(fn => `*${fn}*`))
+                  tableParts.push(...item.table_footnote.map((fn: string) => `*${fn}*`))
                 }
                 content = tableParts.join('\n\n')
                 break
-              
+              }
+
               case 'formula':
                 // formula类型：如果有formula_content或formula_latex，使用它们
                 if (item.formula_content) {
@@ -95,7 +154,7 @@ function App() {
                   content = `$$${item.text}$$`
                 }
                 break
-              
+
               case 'title':
               case 'header':
               case 'footer':
@@ -104,16 +163,16 @@ function App() {
                 // 这些类型通常有text字段，如果没有则使用空字符串
                 content = item.text || ''
                 break
-              
+
               default:
                 // 其他类型：尝试使用text字段
                 content = item.text || ''
             }
           }
-          
+
           return {
             id: item.id ?? `${item.page_idx}-${idx}`,
-            type: item.type,
+            type,
             bbox: item.bbox,
             page_idx: item.page_idx,
             content,
@@ -126,14 +185,80 @@ function App() {
         const allTypes = new Set<string>()
         mapped.forEach((m) => allTypes.add(m.type))
         setFilterTypes(allTypes)
+        return
       } catch (err) {
-        setError((err as Error).message)
-      } finally {
-        setLoading(false)
+        lastError = err as Error
+        console.warn(`尝试 URL ${url} 失败:`, err)
+        // 继续尝试下一个 URL
+        continue
       }
     }
-    load()
-  }, [setFilterTypes])
+
+    // 所有 URL 都失败了
+    const error = lastError || new Error('所有请求都失败了')
+    let errorMessage = error.message || '未知错误'
+
+    // 提供更详细的错误信息
+    if (errorMessage === 'Failed to fetch' || errorMessage.includes('fetch')) {
+      errorMessage = `网络请求失败: ${errorMessage}\n\n请求URL: ${viewerConfig.contentListUrl}\n\n可能的原因：\n1. CORS跨域问题 - 服务器未设置正确的CORS头\n2. 网络连接问题 - 请检查网络连接\n3. URL不正确 - 请检查URL是否正确\n4. 服务器未响应 - 请检查服务器状态`
+    }
+
+    console.error('加载数据失败:', error)
+    setError(errorMessage)
+  }
+
+  const fetchTask = async () => {
+    if (!taskIdInput.trim()) {
+      setError('请输入有效的 task_id')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    setItems([])
+
+    try {
+      const resp = await fetch(
+        `http://58.247.21.68:39020/api/v1/tasks/${encodeURIComponent(taskIdInput.trim())}`,
+      )
+      if (!resp.ok) {
+        throw new Error(`获取任务信息失败: ${resp.status} ${resp.statusText}`)
+      }
+      const data = await resp.json()
+      if (!data.success) {
+        throw new Error(data.error_message || '任务查询失败')
+      }
+      if (!data.assets) {
+        throw new Error('返回结果中缺少 assets 字段')
+      }
+
+      const nextAssets: TaskAssets = {
+        pdf_url: data.assets.pdf_url,
+        content_list_url: data.assets.content_list_url,
+        full_md_link: data.assets.full_md_link,
+      }
+      const nextConfig = buildViewerConfig(nextAssets)
+
+      setConfig(nextConfig)
+
+      await loadContentList(nextConfig, nextAssets)
+    } catch (e) {
+      const err = e as Error
+      console.error('获取任务失败:', err)
+      setError(err.message || '获取任务失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 首次自动加载示例 task_id，避免页面空白
+  useEffect(() => {
+    // 只在首次挂载时触发一次
+    fetchTask().catch((e) => {
+      console.warn('初始任务加载失败:', e)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const filteredItems = useMemo(() => items.filter((i) => Array.isArray(i.bbox) && i.bbox.length === 4), [items])
 
@@ -219,12 +344,16 @@ function App() {
       return targetPage
     } else {
       // 对于Markdown，找到视口中心所在的块
-      type Closest = { id: string; distance: number; page: number }
+      interface Closest {
+        id: string
+        distance: number
+        page: number
+      }
       let closest: Closest | null = null
 
-      sortedItems.forEach((item) => {
+      for (const item of sortedItems) {
         const mdEl = document.getElementById(`md-${item.id}`)
-        if (!mdEl) return
+        if (!mdEl) continue
 
         const rect = mdEl.getBoundingClientRect()
         const blockCenter = rect.top + rect.height / 2
@@ -233,7 +362,7 @@ function App() {
         if (!closest || distance < closest.distance) {
           closest = { id: item.id, distance, page: item.page_idx + 1 }
         }
-      })
+      }
 
       return closest ? closest.page : null
     }
@@ -373,12 +502,59 @@ function App() {
   }, [handlePdfScroll, handleMdScroll])
 
   if (loading) return <div className="page">加载中...</div>
-  if (error) return <div className="page error">加载失败: {error}</div>
+  if (error) {
+    return (
+      <div className="page error">
+        <h2>加载失败</h2>
+        <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{error}</pre>
+        <div style={{ marginTop: '20px' }}>
+          <h3>可能的解决方案：</h3>
+          <ul style={{ textAlign: 'left', display: 'inline-block' }}>
+            <li>检查网络连接是否正常</li>
+            <li>检查URL是否正确：<code>{config.contentListUrl}</code></li>
+            <li>如果是CORS问题，需要在服务器端设置正确的CORS头，或使用代理</li>
+            <li>检查浏览器控制台获取更多错误信息</li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="page">
+        <header className="header">
+          <h1>PDF + Markdown 双向联动演示</h1>
+          <div className="task-input-row">
+            <span>task_id：</span>
+            <input
+              className="task-input"
+              value={taskIdInput}
+              onChange={(e) => setTaskIdInput(e.target.value)}
+              placeholder="请输入任务 ID"
+            />
+            <button onClick={fetchTask}>加载任务</button>
+          </div>
+        </header>
+        <div style={{ marginTop: '40px' }}>请先输入 task_id 并点击「加载任务」。</div>
+      </div>
+    )
+  }
 
   return (
     <div className="page">
       <header className="header">
         <h1>PDF + Markdown 双向联动演示</h1>
+        <div className="task-input-row">
+          <span>task_id：</span>
+          <input
+            className="task-input"
+            value={taskIdInput}
+            onChange={(e) => setTaskIdInput(e.target.value)}
+            placeholder="请输入任务 ID"
+          />
+          <button onClick={fetchTask}>加载任务</button>
+        </div>
         <Toolbar items={filteredItems} onSave={() => alert('保存功能可在此扩展')} />
       </header>
       <div className="content-shell">

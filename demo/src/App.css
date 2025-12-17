@@ -283,6 +283,16 @@ button:active {
   border: 1px solid #e5e7eb;
 }
 
+/* 图片说明：小号、淡灰色字体 */
+/* 图片所在段落后紧跟的段落作为图片说明：小号、淡灰色字体（需要支持 :has 选择器的现代浏览器） */
+.md-segment p:has(> img) + p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #9ca3af;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
 .markdown-panel {
   font-family: 'Times New Roman', Times, serif;
 }
@@ -385,6 +395,44 @@ button:active {
 
 .error {
   color: #ef4444;
+  padding: 20px;
+  text-align: center;
+}
+
+.error h2 {
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.error h3 {
+  color: #991b1b;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.error pre {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: left;
+  max-width: 800px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.error ul {
+  text-align: left;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.error code {
+  background: #fee2e2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  word-break: break-all;
 }
 
 /* 滚动条美化 */

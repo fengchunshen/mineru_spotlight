@@ -64,6 +64,11 @@ export function PdfViewer({ items, config }: Props) {
 
   useEffect(() => {
     let mounted = true
+    // 当切换到新的 PDF 时，重置基础宽度、缩放计算标记和页面元信息，避免沿用上一个文档的参数导致 bbox 错位
+    basePageWidthRef.current = null
+    setHasFit(false)
+    setPageMeta({})
+
     getDocument(config.pdfUrl).promise.then((d) => {
       if (mounted) setDoc(d)
     })

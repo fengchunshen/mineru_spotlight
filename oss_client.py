@@ -78,11 +78,28 @@ class CTYunOSSClient:
     ) -> List[Dict[str, str]]:
         """
         批量上传文件，返回字典列表 [{local_path, object_key}]
+
+        约定：
+        - OSS 前缀统一为: <default_prefix>/<task_id>
+        - 为避免过深且冗余的目录层级（例如包含长文件名目录），
+          这里会“压扁”本地路径的第一级目录：
+            base_dir/
+              <doc_name>/vlm/file_origin.pdf  ->  <prefix>/vlm/file_origin.pdf
+              <doc_name>/vlm/images/x.jpg     ->  <prefix>/vlm/images/x.jpg
+          这样最终 OSS 路径形如: tasks/<task_id>/vlm/xxx，满足
+          “tasks/{task_id}/xxxxx 这一层级就够了”的需求。
         """
         results: List[Dict[str, str]] = []
         for path in file_list:
             rel = path.relative_to(base_dir)
-            object_key = f"{prefix.rstrip('/')}/{rel.as_posix()}"
+
+            # 删除第一级目录，避免把冗长的文档名也变成一层目录
+            if len(rel.parts) > 1:
+                flat_rel = Path(*rel.parts[1:])
+            else:
+                flat_rel = rel
+
+            object_key = f"{prefix.rstrip('/')}/{flat_rel.as_posix()}"
             self.upload_file(path, object_key)
             results.append({"local_path": str(path), "object_key": object_key})
         return results

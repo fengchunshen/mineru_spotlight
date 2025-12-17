@@ -113,6 +113,14 @@ def get_oss_client() -> Optional[CTYunOSSClient]:
 def ensure_oss_manifest(task_id: str, result_dir: Path) -> Optional[Dict]:
     """
     确保任务结果已上传到天翼云 OSS，并返回 manifest
+
+    ⚠️ 注意：
+    - 正常情况下，上传动作应由 worker (`litserve_worker.py`) 完成
+    - API 查询接口只应该“读取” manifest，而不是每次查询都触发上传
+    - 因为历史原因，API 侧保留了一个兜底上传逻辑：当 worker 没有上传，
+      且本地没有 `oss_manifest.json` 时，第一次调用会触发一次上传并生成 manifest，
+      后续查询只会读取 manifest，不再重复上传
+
     manifest 结构：
     {
         "prefix": "tasks/<task_id>",
@@ -166,6 +174,24 @@ def ensure_oss_manifest(task_id: str, result_dir: Path) -> Optional[Dict]:
         logger.warning(f"写入 OSS manifest 失败: {e}")
 
     return manifest
+
+
+def load_oss_manifest_if_exists(result_dir: Path) -> Optional[Dict]:
+    """
+    仅读取已存在的 OSS manifest，不做任何上传操作
+
+    - 用于 API 查询接口，避免每次查询都触发上传
+    """
+    manifest_path = result_dir / 'oss_manifest.json'
+    if not manifest_path.exists():
+        return None
+
+    try:
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"读取 OSS manifest 失败: {e}")
+        return None
 
 
 def process_markdown_images(md_content: str, image_dir: Path, upload_images: bool = False):
@@ -672,27 +698,35 @@ async def get_task_status(
                         return item.get('public_url') or item.get('presign_url') or item.get('url')
                 return None
 
-            # 上传完整结果目录到天翼云 OSS，并准备直链
-            manifest = None
-            # 上传完整结果目录到天翼云 OSS
-            try:
-                manifest = ensure_oss_manifest(task_id, result_dir)
-                if manifest:
-                    logger.info(f"✅ 任务 {task_id} 已生成 OSS 链接，共 {len(manifest.get('files', []))} 个文件")
-                else:
-                    logger.warning(f"⚠️  任务 {task_id} 未生成 OSS 链接（可能未配置凭据或目录为空）")
-            except Exception as e:
-                logger.error(f"❌ 上传任务 {task_id} 结果到 OSS 失败: {e}")
+            # 优先只“读取” worker 生成的 OSS manifest，避免查询接口触发上传
+            manifest = load_oss_manifest_if_exists(result_dir)
+            if manifest:
+                logger.info(f"✅ 任务 {task_id} 读取到已有 OSS manifest，共 {len(manifest.get('files', []))} 个文件")
+            else:
+                logger.info(f"ℹ️  任务 {task_id} 没有找到 OSS manifest，将仅返回本地路径资源")
 
             # 构建前端需要的核心直链（优先用 OSS 链接，退化为本地路径）
             assets = {}
 
-            # origin pdf
+            # origin pdf (只返回原始 PDF，不返回 layout/span 等)
             pdf_url = None
             if manifest:
-                pdf_url = _url_from_manifest(manifest, ['_origin.pdf', '.pdf'])
+                # 优先匹配 _origin.pdf
+                pdf_url = _url_from_manifest(manifest, ['_origin.pdf'])
+                # 如果没有 _origin.pdf，尝试匹配普通 .pdf（排除 layout/span）
+                if not pdf_url:
+                    for item in manifest.get('files', []):
+                        rel = item.get('relative_path', '')
+                        if rel.endswith('.pdf') and not any(rel.endswith(suffix) for suffix in ['_layout.pdf', '_span.pdf', '_origin.pdf']):
+                            pdf_url = item.get('public_url') or item.get('presign_url') or item.get('url')
+                            break
             if not pdf_url:
-                local_pdf = _pick_local('*_origin.pdf') or _pick_local('*.pdf')
+                # 本地文件查找：优先 _origin.pdf，然后普通 PDF（排除 layout/span）
+                local_pdf = _pick_local('*_origin.pdf')
+                if not local_pdf:
+                    all_pdfs = list(result_dir.rglob('*.pdf'))
+                    # 排除 layout、span，保留 origin 和普通 PDF
+                    local_pdf = next((f for f in all_pdfs if not any(f.stem.endswith(suffix) for suffix in ['_layout', '_span'])), None)
                 if local_pdf:
                     pdf_url = str(local_pdf)
             if pdf_url:

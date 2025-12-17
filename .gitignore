@@ -37,6 +37,7 @@ dist/
 mineru.local.json*
 mineru_tianshu.db
 
-
+*.txt
+*.json
 
 

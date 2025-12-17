@@ -12,8 +12,10 @@ import time
 import threading
 import signal
 import atexit
+import re
 from pathlib import Path
 from typing import Optional, Dict, List
+from urllib.parse import urlparse, urlunparse, quote
 import litserve as ls
 from loguru import logger
 
@@ -182,9 +184,146 @@ class MinerUWorkerAPI(ls.LitAPI):
             )
         return self.oss_client
 
+    def _encode_url(self, url: str) -> str:
+        """
+        对 URL 进行编码，保留协议和域名部分，只编码路径部分
+        
+        Args:
+            url: 原始 URL
+            
+        Returns:
+            编码后的 URL
+        """
+        try:
+            parsed = urlparse(url)
+            # 只编码路径部分，保留协议、域名、端口等
+            encoded_path = quote(parsed.path, safe='/')
+            # 如果有查询参数，也编码
+            encoded_query = quote(parsed.query, safe='=&') if parsed.query else ''
+            # 如果有片段，也编码
+            encoded_fragment = quote(parsed.fragment, safe='') if parsed.fragment else ''
+            
+            # 重新组合 URL
+            encoded = urlunparse((
+                parsed.scheme,
+                parsed.netloc,
+                encoded_path,
+                parsed.params,
+                encoded_query,
+                encoded_fragment
+            ))
+            return encoded
+        except Exception as e:
+            logger.warning(f"URL 编码失败 {url}: {e}，返回原始 URL")
+            return url
+    
+    def _update_markdown_image_urls(self, md_file: Path, manifest: Dict, result_dir: Path) -> bool:
+        """
+        根据 OSS manifest 更新 markdown 文件中的图片路径为 OSS URL
+        
+        Args:
+            md_file: Markdown 文件路径
+            manifest: OSS manifest 字典
+            result_dir: 结果目录根路径
+            
+        Returns:
+            bool: 是否成功更新
+        """
+        try:
+            # 读取 markdown 内容
+            with open(md_file, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # 构建相对路径到 OSS URL 的映射
+            path_to_url = {}
+            for item in manifest.get('files', []):
+                rel_path = item.get('relative_path', '')
+                url = item.get('public_url') or item.get('presign_url') or item.get('url')
+                if url:
+                    path_to_url[rel_path] = url
+                    # 也支持只匹配文件名的情况
+                    path_to_url[Path(rel_path).name] = url
+            
+            # 查找所有 markdown 格式的图片引用: ![alt](path)
+            img_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+            updated = False
+            
+            def replace_image(match):
+                nonlocal updated
+                alt_text = match.group(1)
+                image_path = match.group(2)
+                
+                # 如果已经是完整 URL，检查是否需要编码
+                if image_path.startswith(('http://', 'https://')):
+                    # 检查 URL 中是否包含未编码的特殊字符（中文字符、空格等）
+                    # 如果包含，进行编码
+                    try:
+                        parsed = urlparse(image_path)
+                        # 检查路径部分是否包含需要编码的字符
+                        if any(ord(c) > 127 or c in ' <>{}|\\^`[]' for c in parsed.path):
+                            encoded_url = self._encode_url(image_path)
+                            updated = True
+                            return f'![{alt_text}]({encoded_url})'
+                    except Exception:
+                        pass
+                    return match.group(0)
+                
+                # 计算 markdown 文件相对于结果目录的路径
+                md_dir = Path(md_file).parent
+                md_rel_dir = md_dir.relative_to(result_dir)
+                
+                # 方法1: 尝试匹配相对于结果目录的完整路径
+                # 例如: markdown 在 subdir/file.md, 图片引用 images/img.png
+                # 则完整路径为: subdir/images/img.png
+                full_rel_path = str(md_rel_dir / image_path) if md_rel_dir != Path('.') else image_path
+                # 标准化路径分隔符
+                full_rel_path = full_rel_path.replace('\\', '/')
+                if full_rel_path in path_to_url:
+                    updated = True
+                    oss_url = self._encode_url(path_to_url[full_rel_path])
+                    return f'![{alt_text}]({oss_url})'
+                
+                # 方法2: 尝试匹配相对于 markdown 文件的路径（如果文件存在）
+                full_image_path = md_dir / image_path
+                if full_image_path.exists():
+                    rel_path = str(full_image_path.relative_to(result_dir))
+                    rel_path = rel_path.replace('\\', '/')
+                    if rel_path in path_to_url:
+                        updated = True
+                        oss_url = self._encode_url(path_to_url[rel_path])
+                        return f'![{alt_text}]({oss_url})'
+                
+                # 方法3: 尝试只匹配文件名（最后的手段）
+                image_name = Path(image_path).name
+                if image_name in path_to_url:
+                    updated = True
+                    oss_url = self._encode_url(path_to_url[image_name])
+                    return f'![{alt_text}]({oss_url})'
+                
+                # 未找到匹配，保持原样
+                return match.group(0)
+            
+            # 替换所有图片引用
+            new_content = re.sub(img_pattern, replace_image, md_content)
+            
+            # 如果有更新，保存文件
+            if updated:
+                with open(md_file, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+                logger.info(f"✅ 已更新 markdown 图片路径: {md_file}")
+                return True
+            else:
+                logger.debug(f"ℹ️  markdown 文件无需更新: {md_file}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ 更新 markdown 图片路径失败 {md_file}: {e}")
+            return False
+    
     def _upload_result_to_oss(self, task_id: str, result_dir: Path):
         """
         将任务结果目录上传到天翼云 OSS，生成 manifest
+        上传完成后，会自动更新 markdown 文件中的图片路径为 OSS URL
         """
         client = self._get_oss_client()
         if not client:
@@ -198,6 +337,13 @@ class MinerUWorkerAPI(ls.LitAPI):
         manifest_path = result_dir / 'oss_manifest.json'
         if manifest_path.exists():
             logger.info(f"ℹ️ 已存在 OSS manifest，跳过重复上传: {manifest_path}")
+            # 即使 manifest 已存在，也尝试更新 markdown 和 content_list 文件
+            try:
+                with open(manifest_path, 'r', encoding='utf-8') as f:
+                    manifest = json.load(f)
+                self._update_markdown_files_with_oss_urls(result_dir, manifest)
+            except Exception as e:
+                logger.warning(f"读取已有 manifest 并更新文件失败: {e}")
             return
 
         files: List[Path] = [p for p in result_dir.rglob('*') if p.is_file() and p.name != 'oss_manifest.json']
@@ -228,6 +374,178 @@ class MinerUWorkerAPI(ls.LitAPI):
             logger.info(f"✅ 任务 {task_id} 已上传 OSS，manifest: {manifest_path}")
         except Exception as e:
             logger.warning(f"写入 OSS manifest 失败: {e}")
+        
+        # 上传完成后，更新 markdown 文件中的图片路径为 OSS URL
+        self._update_markdown_files_with_oss_urls(result_dir, manifest)
+    
+    def _update_content_list_image_urls(self, content_list_file: Path, manifest: Dict, result_dir: Path) -> bool:
+        """
+        更新 content_list.json 文件中的图片路径为 OSS URL
+        
+        Args:
+            content_list_file: content_list.json 文件路径
+            manifest: OSS manifest 字典
+            result_dir: 结果目录根路径
+            
+        Returns:
+            bool: 是否成功更新
+        """
+        try:
+            # 读取 content_list.json
+            with open(content_list_file, 'r', encoding='utf-8') as f:
+                content_list = json.load(f)
+            
+            # 构建相对路径到 OSS URL 的映射
+            path_to_url = {}
+            for item in manifest.get('files', []):
+                rel_path = item.get('relative_path', '')
+                url = item.get('public_url') or item.get('presign_url') or item.get('url')
+                if url:
+                    path_to_url[rel_path] = url
+                    # 也支持只匹配文件名的情况
+                    path_to_url[Path(rel_path).name] = url
+            
+            # 计算 content_list.json 文件所在的目录
+            content_list_dir = content_list_file.parent
+            updated = False
+            
+            # 遍历所有内容项，更新图片路径
+            for item in content_list:
+                if item.get('type') == 'image' and 'img_path' in item:
+                    img_path = item['img_path']
+                    
+                    # 跳过已经是完整 URL 的图片
+                    if img_path.startswith(('http://', 'https://')):
+                        # 检查是否需要编码
+                        try:
+                            parsed = urlparse(img_path)
+                            if any(ord(c) > 127 or c in ' <>{}|\\^`[]' for c in parsed.path):
+                                item['img_path'] = self._encode_url(img_path)
+                                updated = True
+                        except Exception:
+                            pass
+                        continue
+                    
+                    # 构建完整的相对路径
+                    full_img_path = content_list_dir / img_path
+                    if full_img_path.exists():
+                        rel_path = str(full_img_path.relative_to(result_dir))
+                        rel_path_normalized = rel_path.replace('\\', '/')
+                        
+                        if rel_path_normalized in path_to_url:
+                            oss_url = path_to_url[rel_path_normalized]
+                            item['img_path'] = self._encode_url(oss_url)
+                            updated = True
+                        else:
+                            # 尝试只匹配文件名
+                            img_name = Path(img_path).name
+                            if img_name in path_to_url:
+                                oss_url = path_to_url[img_name]
+                                item['img_path'] = self._encode_url(oss_url)
+                                updated = True
+            
+            # 如果有更新，保存文件
+            if updated:
+                with open(content_list_file, 'w', encoding='utf-8') as f:
+                    json.dump(content_list, f, ensure_ascii=False, indent=4)
+                logger.info(f"✅ 已更新 content_list 图片路径: {content_list_file}")
+                return True
+            else:
+                logger.debug(f"ℹ️  content_list 文件无需更新: {content_list_file}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ 更新 content_list 图片路径失败 {content_list_file}: {e}")
+            return False
+    
+    def _update_markdown_files_with_oss_urls(self, result_dir: Path, manifest: Dict):
+        """
+        更新所有 markdown 和 content_list.json 文件中的图片路径为 OSS URL，并重新上传更新后的文件
+        
+        Args:
+            result_dir: 结果目录
+            manifest: OSS manifest 字典
+        """
+        # 查找所有 markdown 文件（排除带特殊后缀的）
+        md_files = [f for f in result_dir.rglob('*.md') 
+                    if f.is_file() and not any(f.stem.endswith(suffix) 
+                    for suffix in ['_layout', '_span', '_origin'])]
+        
+        updated_files = []
+        
+        # 更新 markdown 文件
+        for md_file in md_files:
+            if self._update_markdown_image_urls(md_file, manifest, result_dir):
+                updated_files.append(md_file)
+        
+        # 查找并更新 content_list.json 文件
+        content_list_files = list(result_dir.rglob('*_content_list.json'))
+        for content_list_file in content_list_files:
+            if self._update_content_list_image_urls(content_list_file, manifest, result_dir):
+                updated_files.append(content_list_file)
+        
+        # 如果有文件被更新，重新上传这些文件到 OSS
+        if updated_files:
+            client = self._get_oss_client()
+            if client:
+                logger.info(f"🔄 正在重新上传 {len(updated_files)} 个更新后的文件到 OSS（markdown 和 content_list）")
+                try:
+                    prefix = manifest.get('prefix', '')
+                    for updated_file in updated_files:
+                        rel_path = str(updated_file.relative_to(result_dir))
+                        rel_path_normalized = rel_path.replace('\\', '/')
+
+                        # 1. 尝试在 manifest 中找到原有的 object_key（保持与初次上传一致）
+                        object_key = None
+                        for item in manifest.get('files', []):
+                            item_rel_path = item.get('relative_path', '').replace('\\', '/')
+                            if item_rel_path == rel_path_normalized:
+                                object_key = item.get('object_key')
+                                break
+
+                        # 2. 如果 manifest 中没有该文件，则按与 upload_files 相同的规则构造 object_key：
+                        #    去掉第一级目录，避免冗余的文档名目录
+                        if not object_key:
+                            parts = rel_path_normalized.split('/')
+                            if len(parts) > 1:
+                                flat_rel = '/'.join(parts[1:])
+                            else:
+                                flat_rel = rel_path_normalized
+                            object_key = f"{prefix}/{flat_rel}"
+
+                        # 上传文件
+                        client.upload_file(updated_file, object_key)
+
+                        # 更新 manifest 中对应文件的 URL（如果已存在）
+                        found = False
+                        for item in manifest.get('files', []):
+                            item_rel_path = item.get('relative_path', '').replace('\\', '/')
+                            if item_rel_path == rel_path_normalized:
+                                item['object_key'] = object_key
+                                item['presign_url'] = client.presign_url(object_key)
+                                item['public_url'] = client.public_url(object_key)
+                                item['url'] = item.get('public_url') or item.get('presign_url')
+                                found = True
+                                break
+
+                        # 如果 manifest 中没有这个文件，添加它
+                        if not found:
+                            manifest['files'].append({
+                                "relative_path": rel_path_normalized,
+                                "object_key": object_key,
+                                "presign_url": client.presign_url(object_key),
+                                "public_url": client.public_url(object_key),
+                                "url": client.public_url(object_key) or client.presign_url(object_key),
+                            })
+
+                    # 保存更新后的 manifest
+                    manifest_path = result_dir / 'oss_manifest.json'
+                    with open(manifest_path, 'w', encoding='utf-8') as f:
+                        json.dump(manifest, f, ensure_ascii=False, indent=2)
+
+                    logger.info(f"✅ 已重新上传 {len(updated_files)} 个更新后的文件到 OSS")
+                except Exception as e:
+                    logger.error(f"❌ 重新上传更新后的文件失败: {e}")
     
     def setup(self, device):
         """

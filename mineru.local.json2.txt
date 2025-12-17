@@ -1,6 +1,0 @@
-{
-    "models-dir": {
-      "vlm": "/root/.cache/modelscope/hub/models/OpenDataLab/MinerU2.5-2509-1.2B",
-      "pipeline": "/root/.cache/modelscope/hub/models/OpenDataLab/PDF-Extract-Kit-1.0"
-    }
-}

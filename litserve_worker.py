@@ -13,6 +13,7 @@ import threading
 import signal
 import atexit
 from pathlib import Path
+from typing import Optional, Dict, List
 import litserve as ls
 from loguru import logger
 
@@ -20,6 +21,7 @@ from loguru import logger
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from task_db import TaskDB
+from oss_client import CTYunOSSClient, OSSConfig
 from mineru.cli.common import do_parse, read_fn
 from mineru.utils.config_reader import get_device
 from mineru.utils.model_utils import get_vram, clean_memory
@@ -129,6 +131,103 @@ class MinerUWorkerAPI(ls.LitAPI):
         self.markitdown = None
         self.running = False  # Worker 运行状态
         self.worker_thread = None  # Worker 线程
+        self.oss_client: Optional[CTYunOSSClient] = None
+        self.oss_config = self._load_oss_config()
+
+    @staticmethod
+    def _get_int_env(name: str, default: int) -> int:
+        try:
+            val = os.getenv(name)
+            return int(val) if val is not None and val != '' else default
+        except ValueError:
+            return default
+
+    def _load_oss_config(self) -> Dict:
+        """
+        读取天翼云 OSS 配置；缺失必填项时返回空 dict
+        """
+        cfg = {
+            'access_key': os.getenv('CTYUN_ACCESS_KEY', '0NAG9S3AFKVCLP6F5CC7'),
+            'secret_key': os.getenv('CTYUN_SECRET_KEY', 'B33aA5PjbuEe4TUoVOQaA3xetAkNhNQlUuJHbDR0'),
+            'endpoint': os.getenv('CTYUN_ENDPOINT', 'https://shanghai-9.zos.ctyun.cn'),
+            'bucket': os.getenv('CTYUN_BUCKET', 'spotlight'),
+            'region': os.getenv('CTYUN_REGION', 'cn'),
+            'prefix': os.getenv('CTYUN_PREFIX', 'tasks'),
+            'external_host': os.getenv('CTYUN_EXTERNAL_HOST', 'https://spotlight.shanghai-9.zos.ctyun.cn'),
+            'presign_expire': self._get_int_env('CTYUN_PRESIGN_EXPIRE', 24 * 3600),
+        }
+        required = ['access_key', 'secret_key', 'endpoint', 'bucket']
+        if not all(cfg.get(k) for k in required):
+            logger.warning("⚠️ 未配置完整的天翼云 OSS 凭据，Worker 将跳过上传")
+            return {}
+        return cfg
+
+    def _get_oss_client(self) -> Optional[CTYunOSSClient]:
+        """懒加载 OSS 客户端"""
+        if not self.oss_config:
+            return None
+        if self.oss_client is None:
+            cfg = self.oss_config
+            self.oss_client = CTYunOSSClient(
+                OSSConfig(
+                    access_key=cfg['access_key'],
+                    secret_key=cfg['secret_key'],
+                    endpoint=cfg['endpoint'],
+                    bucket=cfg['bucket'],
+                    region=cfg['region'],
+                    default_prefix=cfg['prefix'],
+                    external_host=cfg.get('external_host') or None,
+                    presign_expire=cfg['presign_expire'],
+                )
+            )
+        return self.oss_client
+
+    def _upload_result_to_oss(self, task_id: str, result_dir: Path):
+        """
+        将任务结果目录上传到天翼云 OSS，生成 manifest
+        """
+        client = self._get_oss_client()
+        if not client:
+            logger.warning(f"⚠️ 未配置 OSS，跳过上传: task_id={task_id}")
+            return
+
+        if not result_dir.exists():
+            logger.warning(f"⚠️ 结果目录不存在，无法上传: {result_dir}")
+            return
+
+        manifest_path = result_dir / 'oss_manifest.json'
+        if manifest_path.exists():
+            logger.info(f"ℹ️ 已存在 OSS manifest，跳过重复上传: {manifest_path}")
+            return
+
+        files: List[Path] = [p for p in result_dir.rglob('*') if p.is_file() and p.name != 'oss_manifest.json']
+        if not files:
+            logger.info(f"ℹ️ 结果目录为空，跳过上传: {result_dir}")
+            return
+
+        prefix = f"{self.oss_config['prefix'].rstrip('/')}/{task_id}"
+        logger.info(f"🆙 正在上传任务 {task_id} 结果到天翼云，文件数: {len(files)}，前缀: {prefix}")
+        uploaded = client.upload_files(result_dir, files, prefix)
+
+        manifest = {"prefix": prefix, "files": []}
+        for item in uploaded:
+            object_key = item['object_key']
+            presign_url = client.presign_url(object_key)
+            public_url = client.public_url(object_key)
+            manifest['files'].append({
+                "relative_path": str(Path(item['local_path']).relative_to(result_dir)),
+                "object_key": object_key,
+                "presign_url": presign_url,
+                "public_url": public_url,
+                "url": public_url or presign_url,
+            })
+
+        try:
+            with open(manifest_path, 'w', encoding='utf-8') as f:
+                json.dump(manifest, f, ensure_ascii=False, indent=2)
+            logger.info(f"✅ 任务 {task_id} 已上传 OSS，manifest: {manifest_path}")
+        except Exception as e:
+            logger.warning(f"写入 OSS manifest 失败: {e}")
     
     def setup(self, device):
         """
@@ -320,6 +419,11 @@ class MinerUWorkerAPI(ls.LitAPI):
                 logger.info(f"✅ 任务 {task_id} 已由 {self.worker_id} 完成")
                 logger.info(f"   解析器: {parse_method}")
                 logger.info(f"   输出目录: {output_path}")
+                # 成功后尝试上传 OSS（若配置可用）
+                try:
+                    self._upload_result_to_oss(task_id, output_path)
+                except Exception as e:
+                    logger.error(f"❌ 上传任务 {task_id} 结果到 OSS 失败: {e}")
             else:
                 logger.warning(
                     f"⚠️  任务 {task_id} 被其他进程修改。"

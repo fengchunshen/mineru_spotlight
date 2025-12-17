@@ -363,12 +363,12 @@ class TaskDB:
             
             return file_count
     
-    def cleanup_old_task_records(self, days: int = 30):
+    def cleanup_old_task_records(self, days: int | None = 30):
         """
         清理极旧的任务记录（可选功能）
         
         Args:
-            days: 删除多少天前的任务记录
+            days: 删除多少天前的任务记录；传 None 时删除所有任务
             
         Returns:
             int: 删除的记录数
@@ -378,15 +378,31 @@ class TaskDB:
             - 建议设置较长的保留期（如30-90天）
             - 一般情况下不需要调用此方法
         """
+        statuses = ("completed", "failed", "pending", "processing")
         with self.get_cursor() as cursor:
-            cursor.execute('''
-                DELETE FROM tasks 
-                WHERE completed_at < datetime('now', '-' || ? || ' days')
-                AND status IN ('completed', 'failed')
-            ''', (days,))
+            if days is None:
+                cursor.execute(f'''
+                    DELETE FROM tasks 
+                    WHERE status IN ({",".join(["?"] * len(statuses))})
+                ''', statuses)
+            else:
+                # 使用 completed_at / created_at 中较早的时间进行判断，兼容未完成任务
+                cursor.execute(f'''
+                    DELETE FROM tasks 
+                    WHERE COALESCE(completed_at, created_at) < datetime('now', '-' || ? || ' days')
+                    AND status IN ({",".join(["?"] * len(statuses))})
+                ''', (days, *statuses))
             
-            deleted_count = cursor.rowcount
-            return deleted_count
+            return cursor.rowcount
+
+    def cleanup_old_tasks(self, days: int | None = 30):
+        """
+        兼容性包装：清理旧任务入口
+        
+        默认等同于 cleanup_old_task_records，供 API 调用。
+        如果后续需要扩展为先清理文件再删记录，可在此统一处理。
+        """
+        return self.cleanup_old_task_records(days)
     
     def reset_stale_tasks(self, timeout_minutes: int = 60):
         """

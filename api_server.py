@@ -11,15 +11,16 @@ import tempfile
 from pathlib import Path
 from loguru import logger
 import uvicorn
-from typing import Optional
 from datetime import datetime
 import os
 import re
 import uuid
 import json
 from minio import Minio
+from typing import Dict, List, Optional
 
 from task_db import TaskDB
+from oss_client import CTYunOSSClient, OSSConfig
 
 # 初始化 FastAPI 应用
 app = FastAPI(
@@ -53,6 +54,26 @@ MINIO_CONFIG = {
     'bucket_name': os.getenv('MINIO_BUCKET', '')
 }
 
+# 天翼云 OSS 配置（优先环境变量，缺省使用提供的值）
+def _get_int_env(name: str, default: int) -> int:
+    try:
+        val = os.getenv(name)
+        return int(val) if val is not None and val != '' else default
+    except ValueError:
+        return default
+
+
+CTYUN_CONFIG = {
+    'access_key': os.getenv('CTYUN_ACCESS_KEY', '0NAG9S3AFKVCLP6F5CC7'),
+    'secret_key': os.getenv('CTYUN_SECRET_KEY', 'B33aA5PjbuEe4TUoVOQaA3xetAkNhNQlUuJHbDR0'),
+    'endpoint': os.getenv('CTYUN_ENDPOINT', 'https://shanghai-9.zos.ctyun.cn'),
+    'bucket': os.getenv('CTYUN_BUCKET', 'spotlight'),
+    'region': os.getenv('CTYUN_REGION', 'cn'),
+    'prefix': os.getenv('CTYUN_PREFIX', 'tasks'),
+    'external_host': os.getenv('CTYUN_EXTERNAL_HOST', 'https://spotlight.shanghai-9.zos.ctyun.cn'),
+    'presign_expire': _get_int_env('CTYUN_PRESIGN_EXPIRE', 24 * 3600)
+}
+
 
 def get_minio_client():
     """获取MinIO客户端实例"""
@@ -62,6 +83,89 @@ def get_minio_client():
         secret_key=MINIO_CONFIG['secret_key'],
         secure=MINIO_CONFIG['secure']
     )
+
+
+_oss_client: Optional[CTYunOSSClient] = None
+
+
+def get_oss_client() -> Optional[CTYunOSSClient]:
+    """获取天翼云 OSS 客户端，缺少配置则返回 None"""
+    global _oss_client
+    required = ['access_key', 'secret_key', 'endpoint', 'bucket']
+    if not all(CTYUN_CONFIG.get(k) for k in required):
+        logger.warning("⚠️ 未配置完整的天翼云 OSS 凭据，跳过上传")
+        return None
+    if _oss_client is None:
+        cfg = OSSConfig(
+            access_key=CTYUN_CONFIG['access_key'],
+            secret_key=CTYUN_CONFIG['secret_key'],
+            endpoint=CTYUN_CONFIG['endpoint'],
+            bucket=CTYUN_CONFIG['bucket'],
+            region=CTYUN_CONFIG['region'],
+            default_prefix=CTYUN_CONFIG['prefix'],
+            external_host=CTYUN_CONFIG.get('external_host') or None,
+            presign_expire=CTYUN_CONFIG['presign_expire'],
+        )
+        _oss_client = CTYunOSSClient(cfg)
+    return _oss_client
+
+
+def ensure_oss_manifest(task_id: str, result_dir: Path) -> Optional[Dict]:
+    """
+    确保任务结果已上传到天翼云 OSS，并返回 manifest
+    manifest 结构：
+    {
+        "prefix": "tasks/<task_id>",
+        "files": [
+            {"relative_path": "...", "object_key": "...", "url": "...", "public_url": "...", "presign_url": "..."}
+        ]
+    }
+    """
+    client = get_oss_client()
+    if not client:
+        return None
+
+    manifest_path = result_dir / 'oss_manifest.json'
+    if manifest_path.exists():
+        try:
+            with open(manifest_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"读取 OSS manifest 失败，将重新生成: {e}")
+
+    if not result_dir.exists():
+        logger.warning(f"结果目录不存在，无法上传到 OSS: {result_dir}")
+        return None
+
+    # 收集所有文件（跳过 manifest 自身）
+    files: List[Path] = [p for p in result_dir.rglob('*') if p.is_file() and p.name != 'oss_manifest.json']
+    if not files:
+        logger.info(f"结果目录为空，跳过上传: {result_dir}")
+        return None
+
+    prefix = f"{CTYUN_CONFIG['prefix'].rstrip('/')}/{task_id}"
+    uploaded = client.upload_files(result_dir, files, prefix)
+
+    manifest = {"prefix": prefix, "files": []}
+    for item in uploaded:
+        object_key = item['object_key']
+        presign_url = client.presign_url(object_key)
+        public_url = client.public_url(object_key)
+        manifest['files'].append({
+            "relative_path": str(Path(item['local_path']).relative_to(result_dir)),
+            "object_key": object_key,
+            "presign_url": presign_url,
+            "public_url": public_url,
+            "url": public_url or presign_url,
+        })
+
+    try:
+        with open(manifest_path, 'w', encoding='utf-8') as f:
+            json.dump(manifest, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning(f"写入 OSS manifest 失败: {e}")
+
+    return manifest
 
 
 def process_markdown_images(md_content: str, image_dir: Path, upload_images: bool = False):
@@ -515,7 +619,8 @@ async def get_task_data(
 @app.get("/api/v1/tasks/{task_id}")
 async def get_task_status(
     task_id: str,
-    upload_images: bool = Query(False, description="是否上传图片到MinIO并替换链接（仅当任务完成时有效）")
+    upload_images: bool = Query(False, description="是否上传图片到MinIO并替换链接（仅当任务完成时有效）"),
+    include_data: bool = Query(False, description="是否返回解析后的 markdown 内容，默认不返回以减小响应体")
 ):
     """
     查询任务状态和详情
@@ -544,11 +649,9 @@ async def get_task_status(
     }
     logger.info(f"✅ 任务状态: {task['status']} - (result_path: {task['result_path']})")
     
-    # 如果任务已完成，尝试返回解析内容
+    # 如果任务已完成，处理上传和（可选的）数据返回
     if task['status'] == 'completed':
         if not task['result_path']:
-            # 结果文件已被清理
-            response['data'] = None
             response['message'] = 'Task completed but result files have been cleaned up (older than retention period)'
             return response
         
@@ -557,44 +660,114 @@ async def get_task_status(
         
         if result_dir.exists():
             logger.info(f"✅ 结果目录存在")
-            # 递归查找 Markdown 文件（MinerU 输出结构：task_id/filename/auto/*.md）
-            md_files = list(result_dir.rglob('*.md'))
-            logger.info(f"📄 找到 {len(md_files)} 个 markdown 文件: {[f.relative_to(result_dir) for f in md_files]}")
             
-            if md_files:
-                try:
-                    # 读取 Markdown 内容
-                    md_file = md_files[0]
-                    logger.info(f"📖 正在读取 markdown 文件: {md_file}")
-                    with open(md_file, 'r', encoding='utf-8') as f:
-                        md_content = f.read()
-                    
-                    logger.info(f"✅ Markdown 内容加载完成，长度: {len(md_content)} 字符")
-                    
-                    # 查找图片目录（在 markdown 文件的同级目录下）
-                    image_dir = md_file.parent / 'images'
-                    
-                    # 处理图片（如果需要）
-                    if upload_images and image_dir.exists():
-                        logger.info(f"🖼️  正在处理任务 {task_id} 的图片，upload_images={upload_images}")
-                        md_content = process_markdown_images(md_content, image_dir, upload_images)
-                    
-                    # 添加 data 字段
-                    response['data'] = {
-                        'markdown_file': md_file.name,
-                        'content': md_content,
-                        'images_uploaded': upload_images,
-                        'has_images': image_dir.exists() if not upload_images else None
-                    }
-                    logger.info(f"✅ 已成功添加响应 data 字段")
-                    
-                except Exception as e:
-                    logger.error(f"❌ 读取 Markdown 内容失败: {e}")
-                    logger.exception(e)
-                    # 读取失败不影响状态查询，只是不返回 data
-                    response['data'] = None
-            else:
-                logger.warning(f"⚠️  在 {result_dir} 中未找到 markdown 文件")
+            def _pick_local(glob_pattern: str):
+                files = list(result_dir.rglob(glob_pattern))
+                return files[0] if files else None
+
+            def _url_from_manifest(manifest: dict, suffixes):
+                for item in manifest.get('files', []):
+                    rel = item.get('relative_path', '')
+                    if any(rel.endswith(suf) for suf in suffixes):
+                        return item.get('public_url') or item.get('presign_url') or item.get('url')
+                return None
+
+            # 上传完整结果目录到天翼云 OSS，并准备直链
+            manifest = None
+            # 上传完整结果目录到天翼云 OSS
+            try:
+                manifest = ensure_oss_manifest(task_id, result_dir)
+                if manifest:
+                    logger.info(f"✅ 任务 {task_id} 已生成 OSS 链接，共 {len(manifest.get('files', []))} 个文件")
+                else:
+                    logger.warning(f"⚠️  任务 {task_id} 未生成 OSS 链接（可能未配置凭据或目录为空）")
+            except Exception as e:
+                logger.error(f"❌ 上传任务 {task_id} 结果到 OSS 失败: {e}")
+
+            # 构建前端需要的核心直链（优先用 OSS 链接，退化为本地路径）
+            assets = {}
+
+            # origin pdf
+            pdf_url = None
+            if manifest:
+                pdf_url = _url_from_manifest(manifest, ['_origin.pdf', '.pdf'])
+            if not pdf_url:
+                local_pdf = _pick_local('*_origin.pdf') or _pick_local('*.pdf')
+                if local_pdf:
+                    pdf_url = str(local_pdf)
+            if pdf_url:
+                assets['pdf_url'] = pdf_url
+
+            # content_list
+            content_list_url = None
+            if manifest:
+                content_list_url = _url_from_manifest(manifest, ['_content_list.json'])
+            if not content_list_url:
+                local_cl = _pick_local('*_content_list.json')
+                if local_cl:
+                    content_list_url = str(local_cl)
+            if content_list_url:
+                assets['content_list_url'] = content_list_url
+
+            # full markdown
+            full_md_link = None
+            if manifest:
+                full_md_link = _url_from_manifest(manifest, ['.md'])
+            if not full_md_link:
+                local_md = _pick_local('*.md')
+                if local_md:
+                    full_md_link = str(local_md)
+            if full_md_link:
+                assets['full_md_link'] = full_md_link
+
+            # zip (若存在)
+            full_zip_url = None
+            if manifest:
+                full_zip_url = _url_from_manifest(manifest, ['.zip'])
+            if not full_zip_url:
+                local_zip = _pick_local('*.zip')
+                if local_zip:
+                    full_zip_url = str(local_zip)
+            if full_zip_url:
+                assets['full_zip_url'] = full_zip_url
+
+            if assets:
+                response['assets'] = assets
+
+            # 只有在显式请求时才返回解析内容，避免响应过大
+            if include_data:
+                # 递归查找 Markdown 文件（MinerU 输出结构：task_id/filename/auto/*.md）
+                md_files = list(result_dir.rglob('*.md'))
+                logger.info(f"📄 找到 {len(md_files)} 个 markdown 文件: {[f.relative_to(result_dir) for f in md_files]}")
+                
+                if md_files:
+                    try:
+                        md_file = md_files[0]
+                        logger.info(f"📖 正在读取 markdown 文件: {md_file}")
+                        with open(md_file, 'r', encoding='utf-8') as f:
+                            md_content = f.read()
+                        
+                        logger.info(f"✅ Markdown 内容加载完成，长度: {len(md_content)} 字符")
+                        
+                        image_dir = md_file.parent / 'images'
+                        if upload_images and image_dir.exists():
+                            logger.info(f"🖼️  正在处理任务 {task_id} 的图片，upload_images={upload_images}")
+                            md_content = process_markdown_images(md_content, image_dir, upload_images)
+                        
+                        response['data'] = {
+                            'markdown_file': md_file.name,
+                            'content': md_content,
+                            'images_uploaded': upload_images,
+                            'has_images': image_dir.exists() if not upload_images else None
+                        }
+                        logger.info(f"✅ 已成功添加响应 data 字段")
+                        
+                    except Exception as e:
+                        logger.error(f"❌ 读取 Markdown 内容失败: {e}")
+                        logger.exception(e)
+                        response['data'] = None
+                else:
+                    logger.warning(f"⚠️  在 {result_dir} 中未找到 markdown 文件")
         else:
             logger.error(f"❌ 结果目录不存在: {result_dir}")
     elif task['status'] == 'completed':
@@ -678,7 +851,10 @@ async def list_tasks(
 
 
 @app.post("/api/v1/admin/cleanup")
-async def cleanup_old_tasks(days: int = Query(7, description="清理N天前的任务")):
+async def cleanup_old_tasks(days: Optional[int] = Query(
+    None,
+    description="清理N天前的任务；不传则清理全部任务（含pending/processing）"
+)):
     """
     清理旧任务记录（管理接口）
     """

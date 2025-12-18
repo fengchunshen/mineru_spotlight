@@ -1,6 +1,6 @@
 """
-MinerU Tianshu - API Server
-天枢API服务器
+聚光 MinerU - API Server
+聚光 MinerU API服务器
 
 提供RESTful API接口用于任务提交、查询和管理
 """
@@ -21,8 +21,8 @@ from oss_client import CTYunOSSClient, OSSConfig
 
 # 初始化 FastAPI 应用
 app = FastAPI(
-    title="MinerU Tianshu API",
-    description="天枢 - 企业级多GPU文档解析服务",
+    title="聚光 MinerU API",
+    description="聚光 MinerU - 企业级多GPU文档解析服务",
     version="1.0.0"
 )
 
@@ -39,7 +39,7 @@ app.add_middleware(
 db = TaskDB()
 
 # 配置输出目录
-OUTPUT_DIR = Path('/tmp/mineru_tianshu_output')
+OUTPUT_DIR = Path('/tmp/mineru_spotlight_output')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -256,9 +256,9 @@ def get_images_info(image_dir: Path):
 async def root():
     """API根路径"""
     return {
-        "service": "MinerU Tianshu",
+        "service": "聚光 MinerU",
         "version": "1.0.0",
-        "description": "天枢 - 企业级多GPU文档解析服务",
+        "description": "聚光 MinerU - 企业级多GPU文档解析服务",
         "docs": "/docs"
     }
 
@@ -785,7 +785,7 @@ if __name__ == '__main__':
     # 从环境变量读取端口，默认为39020
     api_port = int(os.getenv('API_PORT', '39020'))
     
-    logger.info("🚀 启动 MinerU Tianshu API Server...")
+    logger.info("🚀 启动聚光 MinerU API Server...")
     logger.info(f"📖 API 文档: http://localhost:{api_port}/docs")
     
     uvicorn.run(

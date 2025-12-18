@@ -69,9 +69,9 @@ python start_all.py --workers-per-device 2 --devices 0,1
 
 ```json
 {
-  "service": "MinerU Tianshu",
+  "service": "聚光 MinerU",
   "version": "1.0.0",
-  "description": "天枢 - 企业级多GPU文档解析服务",
+  "description": "聚光 MinerU - 企业级多GPU文档解析服务",
   "docs": "/docs"
 }
 ```
@@ -432,7 +432,7 @@ curl -X POST http://localhost:39020/api/v1/admin/reset-stale?timeout_minutes=60
 python start_all.py [选项]
 
 选项:
-  --output-dir PATH                 输出目录 (默认: /tmp/mineru_tianshu_output)
+  --output-dir PATH                 输出目录 (默认: /tmp/mineru_spotlight_output)
   --api-port PORT                   API端口 (默认: 39020)
   --worker-port PORT                Worker端口 (默认: 39021)
   --accelerator TYPE                加速器类型: auto/cuda/cpu/mps (默认: auto)

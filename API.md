@@ -1,4 +1,4 @@
-# MinerU Tianshu API 接口文档
+# 聚光 MinerU API 接口文档
 
 ## 目录
 
@@ -47,9 +47,9 @@ curl http://localhost:39020/
 
 ```json
 {
-  "service": "MinerU Tianshu",
+  "service": "聚光 MinerU",
   "version": "1.0.0",
-  "description": "天枢 - 企业级多GPU文档解析服务",
+  "description": "聚光 MinerU - 企业级多GPU文档解析服务",
   "docs": "/docs"
 }
 ```

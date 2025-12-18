@@ -1,6 +1,6 @@
 """
-MinerU Tianshu - LitServe Worker
-天枢 LitServe Worker
+聚光 MinerU - LitServe Worker
+聚光 MinerU LitServe Worker
 
 使用 LitServe 实现 GPU 资源的自动负载均衡
 Worker 主动循环拉取任务并处理
@@ -120,7 +120,7 @@ class MinerUWorkerAPI(ls.LitAPI):
     PDF_IMAGE_FORMATS = {'.pdf', '.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.tif', '.webp'}
     # 其他所有格式都使用 MarkItDown 解析
     
-    def __init__(self, output_dir='/tmp/mineru_tianshu_output', worker_id_prefix='tianshu', 
+    def __init__(self, output_dir='/tmp/mineru_spotlight_output', worker_id_prefix='spotlight', 
                  poll_interval=0.5, enable_worker_loop=True):
         super().__init__()
         self.output_dir = Path(output_dir)
@@ -913,7 +913,7 @@ class MinerUWorkerAPI(ls.LitAPI):
 
 
 def start_litserve_workers(
-    output_dir='/tmp/mineru_tianshu_output',
+    output_dir='/tmp/mineru_spotlight_output',
     accelerator='auto',
     devices='auto',
     workers_per_device=1,
@@ -934,7 +934,7 @@ def start_litserve_workers(
         enable_worker_loop: 是否启用 worker 自动循环拉取任务
     """
     logger.info("=" * 60)
-    logger.info("🚀 启动 MinerU Tianshu LitServe Worker 池")
+    logger.info("🚀 启动聚光 MinerU LitServe Worker 池")
     logger.info("=" * 60)
     logger.info(f"📂 输出目录: {output_dir}")
     logger.info(f"🎮 加速器: {accelerator}")
@@ -993,8 +993,8 @@ def start_litserve_workers(
 if __name__ == '__main__':
     import argparse
     
-    parser = argparse.ArgumentParser(description='MinerU Tianshu LitServe Worker Pool')
-    parser.add_argument('--output-dir', type=str, default='/tmp/mineru_tianshu_output',
+    parser = argparse.ArgumentParser(description='聚光 MinerU LitServe Worker Pool')
+    parser.add_argument('--output-dir', type=str, default='/tmp/mineru_spotlight_output',
                        help='Output directory for processed files')
     parser.add_argument('--accelerator', type=str, default='auto',
                        choices=['auto', 'cuda', 'cpu', 'mps'],

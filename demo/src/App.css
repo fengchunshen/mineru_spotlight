@@ -17,6 +17,7 @@
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   background: #ffffff;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
@@ -29,6 +30,28 @@
   color: #111827;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.app-logo {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.file-title {
+  margin-left: 16px;
+  text-align: right; /* 文本靠右对齐 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* 超长时尾部省略号 */
+}
+
 .content-shell {
   flex: 1;
   min-height: 0;
@@ -39,13 +62,92 @@
 }
 
 .file-column-placeholder {
-  width: 240px;
-  min-width: 220px;
+  display: none;
+}
+
+.file-column {
+  width: 260px;
+  min-width: 240px;
   max-width: 280px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-column-header {
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.file-list {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 8px 16px;
+}
+
+.file-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+
+.file-item + .file-item {
+  margin-top: 4px;
+}
+
+.file-item:hover {
+  background: #f3f4f6;
+}
+
+.file-item--active {
+  background: #eef2ff;
+  box-shadow: 0 0 0 1px #e0e7ff;
+}
+
+.file-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #e0f2fe;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.file-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-item-title {
+  font-size: 13px;
+  color: #111827;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.file-item-meta {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .main-pane {
@@ -53,6 +155,31 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0 16px;
+}
+
+.pane-header-tab {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  padding: 10px 0 8px;
+  cursor: default;
+  border-bottom: 2px solid transparent;
+}
+
+.pane-header-tab--active {
+  color: #111827;
+  font-weight: 600;
+  border-bottom-color: #3b82f6;
+  background: transparent;
 }
 
 .scroll-container {
@@ -162,6 +289,56 @@ button:active {
   padding: 0;
   height: auto;
   background: #ffffff;
+}
+
+/* PDF 加载骨架屏 */
+.pdf-skeleton {
+  padding: 16px 0;
+}
+
+.pdf-skeleton-page {
+  width: 88%;
+  max-width: 780px;
+  padding: 32px 40px;
+  margin: 0 auto 16px;
+  border-radius: 8px;
+  background: #ffffff; /* 与真实 PDF 页一致的白底 */
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+}
+
+.pdf-skeleton-lines {
+  margin-top: 24px;
+}
+
+.pdf-skeleton-row {
+  height: 14px;
+  border-radius: 999px;
+  background-color: #f3f4f6;
+  margin-bottom: 12px;
+}
+
+.pdf-skeleton-row--title {
+  width: 70%;
+  height: 20px;
+  margin-bottom: 20px;
+}
+
+.pdf-skeleton-row--subtitle {
+  width: 40%;
+  height: 16px;
+  margin-bottom: 28px;
+}
+
+.pdf-skeleton-row--short {
+  width: 55%;
+}
+
+.pdf-skeleton-block {
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  background-color: #f5f5f5;
 }
 
 .pdf-page {

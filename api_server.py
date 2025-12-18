@@ -1,6 +1,6 @@
 """
-MinerU Tianshu - API Server
-天枢API服务器
+聚光 MinerU - API Server
+聚光 MinerU API服务器
 
 提供RESTful API接口用于任务提交、查询和管理
 """
@@ -13,10 +13,7 @@ from loguru import logger
 import uvicorn
 from datetime import datetime
 import os
-import re
-import uuid
 import json
-from minio import Minio
 from typing import Dict, List, Optional
 
 from task_db import TaskDB
@@ -24,8 +21,8 @@ from oss_client import CTYunOSSClient, OSSConfig
 
 # 初始化 FastAPI 应用
 app = FastAPI(
-    title="MinerU Tianshu API",
-    description="天枢 - 企业级多GPU文档解析服务",
+    title="聚光 MinerU API",
+    description="聚光 MinerU - 企业级多GPU文档解析服务",
     version="1.0.0"
 )
 
@@ -42,17 +39,9 @@ app.add_middleware(
 db = TaskDB()
 
 # 配置输出目录
-OUTPUT_DIR = Path('/tmp/mineru_tianshu_output')
+OUTPUT_DIR = Path('/tmp/mineru_spotlight_output')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# MinIO 配置
-MINIO_CONFIG = {
-    'endpoint': os.getenv('MINIO_ENDPOINT', ''),
-    'access_key': os.getenv('MINIO_ACCESS_KEY', ''),
-    'secret_key': os.getenv('MINIO_SECRET_KEY', ''),
-    'secure': True,
-    'bucket_name': os.getenv('MINIO_BUCKET', '')
-}
 
 # 天翼云 OSS 配置（优先环境变量，缺省使用提供的值）
 def _get_int_env(name: str, default: int) -> int:
@@ -75,14 +64,6 @@ CTYUN_CONFIG = {
 }
 
 
-def get_minio_client():
-    """获取MinIO客户端实例"""
-    return Minio(
-        endpoint=MINIO_CONFIG['endpoint'],
-        access_key=MINIO_CONFIG['access_key'],
-        secret_key=MINIO_CONFIG['secret_key'],
-        secure=MINIO_CONFIG['secure']
-    )
 
 
 _oss_client: Optional[CTYunOSSClient] = None
@@ -194,66 +175,6 @@ def load_oss_manifest_if_exists(result_dir: Path) -> Optional[Dict]:
         return None
 
 
-def process_markdown_images(md_content: str, image_dir: Path, upload_images: bool = False):
-    """
-    处理 Markdown 中的图片引用
-    
-    Args:
-        md_content: Markdown 内容
-        image_dir: 图片所在目录
-        upload_images: 是否上传图片到 MinIO 并替换链接
-        
-    Returns:
-        处理后的 Markdown 内容
-    """
-    if not upload_images:
-        return md_content
-    
-    try:
-        minio_client = get_minio_client()
-        bucket_name = MINIO_CONFIG['bucket_name']
-        minio_endpoint = MINIO_CONFIG['endpoint']
-        
-        # 查找所有 markdown 格式的图片
-        img_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
-        
-        def replace_image(match):
-            alt_text = match.group(1)
-            image_path = match.group(2)
-            
-            # 构建完整的本地图片路径
-            full_image_path = image_dir / Path(image_path).name
-            
-            if full_image_path.exists():
-                # 获取文件后缀
-                file_extension = full_image_path.suffix
-                # 生成 UUID 作为新文件名
-                new_filename = f"{uuid.uuid4()}{file_extension}"
-                
-                try:
-                    # 上传到 MinIO
-                    object_name = f"images/{new_filename}"
-                    minio_client.fput_object(bucket_name=bucket_name, object_name=object_name, file_path=str(full_image_path))
-                    
-                    # 生成 MinIO 访问 URL
-                    scheme = 'https' if MINIO_CONFIG['secure'] else 'http'
-                    minio_url = f"{scheme}://{minio_endpoint}/{bucket_name}/{object_name}"
-                    
-                    # 返回 HTML 格式的 img 标签
-                    return f'<img src="{minio_url}" alt="{alt_text}">'
-                except Exception as e:
-                    logger.error(f"上传图片到 MinIO 失败: {e}")
-                    return match.group(0)  # 上传失败，保持原样
-            
-            return match.group(0)
-        
-        # 替换所有图片引用
-        new_content = re.sub(img_pattern, replace_image, md_content)
-        return new_content
-        
-    except Exception as e:
-        logger.error(f"处理 Markdown 图片时出错: {e}")
-        return md_content  # 出错时返回原内容
 
 
 def read_json_file(file_path: Path):
@@ -295,13 +216,12 @@ def get_file_metadata(file_path: Path):
     }
 
 
-def get_images_info(image_dir: Path, upload_to_minio: bool = False):
+def get_images_info(image_dir: Path):
     """
     获取图片目录信息
 
     Args:
         image_dir: 图片目录路径
-        upload_to_minio: 是否上传到 MinIO
 
     Returns:
         图片信息字典
@@ -309,8 +229,7 @@ def get_images_info(image_dir: Path, upload_to_minio: bool = False):
     if not image_dir.exists() or not image_dir.is_dir():
         return {
             'count': 0,
-            'list': [],
-            'uploaded_to_minio': False
+            'list': []
         }
 
     # 支持的图片格式
@@ -325,51 +244,26 @@ def get_images_info(image_dir: Path, upload_to_minio: bool = False):
             'size': img_file.stat().st_size,
             'path': str(img_file.relative_to(image_dir.parent))
         }
-
-        # 如果需要上传到 MinIO
-        if upload_to_minio:
-            try:
-                minio_client = get_minio_client()
-                bucket_name = MINIO_CONFIG['bucket_name']
-                minio_endpoint = MINIO_CONFIG['endpoint']
-
-                # 生成 UUID 作为新文件名
-                file_extension = img_file.suffix
-                new_filename = f"{uuid.uuid4()}{file_extension}"
-                object_name = f"images/{new_filename}"
-
-                # 上传到 MinIO
-                minio_client.fput_object(bucket_name=bucket_name, object_name=object_name, file_path=str(img_file))
-
-                # 生成访问 URL
-                scheme = 'https' if MINIO_CONFIG['secure'] else 'http'
-                img_info['url'] = f"{scheme}://{minio_endpoint}/{bucket_name}/{object_name}"
-
-            except Exception as e:
-                logger.error(f"上传图片 {img_file.name} 到 MinIO 失败: {e}")
-                img_info['url'] = None
-
         images_list.append(img_info)
 
     return {
         'count': len(images_list),
-        'list': images_list,
-        'uploaded_to_minio': upload_to_minio
+        'list': images_list
     }
 
 
-@app.get("/")
+@app.get("/", summary="服务信息", tags=["基础接口"])
 async def root():
     """API根路径"""
     return {
-        "service": "MinerU Tianshu",
+        "service": "聚光 MinerU",
         "version": "1.0.0",
-        "description": "天枢 - 企业级多GPU文档解析服务",
+        "description": "聚光 MinerU - 企业级多GPU文档解析服务",
         "docs": "/docs"
     }
 
 
-@app.post("/api/v1/tasks/submit")
+@app.post("/api/v1/tasks/submit", summary="提交任务", tags=["任务管理"])
 async def submit_task(
     file: UploadFile = File(..., description="文档文件: PDF/图片(MinerU解析) 或 Office/HTML/文本等(MarkItDown解析)"),
     backend: str = Form('pipeline', description="处理后端: pipeline/vlm-transformers/vlm-vllm-engine"),
@@ -427,232 +321,180 @@ async def submit_task(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/tasks/{task_id}/data")
-async def get_task_data(
-    task_id: str,
-    include_fields: str = Query(
-        "md,content_list,middle_json,model_output,images",
-        description="需要返回的字段，逗号分隔：md,content_list,middle_json,model_output,images,layout_pdf,span_pdf,origin_pdf"
-    ),
-    upload_images: bool = Query(False, description="是否上传图片到MinIO并返回URL"),
-    include_metadata: bool = Query(True, description="是否包含文件元数据")
-):
+def _load_task_data_fields(result_dir: Path, fields: list, include_metadata: bool = True):
     """
-    按需获取任务的解析数据
-
-    支持灵活获取 MinerU 解析后的数据，包括：
-    - Markdown 内容
-    - Content List JSON（结构化内容列表）
-    - Middle JSON（中间处理结果）
-    - Model Output JSON（模型原始输出）
-    - 图片列表
-    - 其他辅助文件（layout PDF、span PDF、origin PDF）
-
-    通过 include_fields 参数按需选择需要返回的字段
+    根据字段列表加载任务数据
+    
+    Args:
+        result_dir: 结果目录
+        fields: 需要加载的字段列表
+        include_metadata: 是否包含文件元数据
+        
+    Returns:
+        包含数据的字典
     """
-    # 获取任务信息
-    task = db.get_task(task_id)
-
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    # 构建基础响应
-    response = {
-        'success': True,
-        'task_id': task_id,
-        'status': task['status'],
-        'file_name': task['file_name'],
-        'backend': task['backend'],
-        'created_at': task['created_at'],
-        'completed_at': task['completed_at']
-    }
-
-    # 如果任务未完成，直接返回状态
-    if task['status'] != 'completed':
-        response['message'] = f"Task is in {task['status']} status, data not available yet"
-        return response
-
-    # 检查结果路径
-    if not task['result_path']:
-        response['message'] = 'Task completed but result files have been cleaned up (older than retention period)'
-        return response
-
-    result_dir = Path(task['result_path'])
-    if not result_dir.exists():
-        response['message'] = 'Result directory does not exist'
-        return response
-
-    # 解析需要返回的字段
-    fields = [f.strip() for f in include_fields.split(',')]
-
-    # 初始化 data 字段
-    response['data'] = {}  # type: ignore
-
-    logger.info(f"📦 正在获取任务 {task_id} 的完整数据，包含字段: {fields}")
-
-    # 查找文件（递归搜索，MinerU 输出结构：task_id/filename/auto/*.md）
-    try:
-        # 1. 处理 Markdown 文件
-        if 'md' in fields:
-            md_files = list(result_dir.rglob('*.md'))
-            # 排除带特殊后缀的 md 文件
-            md_files = [f for f in md_files if not any(f.stem.endswith(suffix) for suffix in ['_layout', '_span', '_origin'])] 
-
-            if md_files:
-                md_file = md_files[0]
-                logger.info(f"📄 读取 markdown 文件: {md_file}")
-
-                with open(md_file, 'r', encoding='utf-8') as f:
-                    md_content = f.read()
-
-                # 处理图片（如果需要上传）
-                image_dir = md_file.parent / 'images'
-                if upload_images and image_dir.exists():
-                    md_content = process_markdown_images(md_content, image_dir, upload_images)
-
-                response['data']['markdown'] = {
-                    'content': md_content,
-                    'file_name': md_file.name
+    data = {}
+    
+    # 1. 处理 Markdown 文件
+    if 'md' in fields:
+        md_files = list(result_dir.rglob('*.md'))
+        # 排除带特殊后缀的 md 文件
+        md_files = [f for f in md_files if not any(f.stem.endswith(suffix) for suffix in ['_layout', '_span', '_origin'])] 
+        
+        if md_files:
+            md_file = md_files[0]
+            logger.info(f"📄 读取 markdown 文件: {md_file}")
+            
+            with open(md_file, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            data['markdown'] = {
+                'content': md_content,
+                'file_name': md_file.name
+            }
+            
+            if include_metadata:
+                metadata = get_file_metadata(md_file)
+                if metadata:
+                    data['markdown']['metadata'] = metadata
+    
+    # 2. 处理 Content List JSON
+    if 'content_list' in fields:
+        content_list_files = list(result_dir.rglob('*_content_list.json'))
+        if content_list_files:
+            content_list_file = content_list_files[0]
+            logger.info(f"📄 读取 content_list 文件: {content_list_file}")
+            
+            content_data = read_json_file(content_list_file)
+            if content_data is not None:
+                data['content_list'] = {
+                    'content': content_data,
+                    'file_name': content_list_file.name
                 }
-
+                
                 if include_metadata:
-                    metadata = get_file_metadata(md_file)
+                    metadata = get_file_metadata(content_list_file)
                     if metadata:
-                        response['data']['markdown']['metadata'] = metadata
-
-        # 2. 处理 Content List JSON
-        if 'content_list' in fields:
-            content_list_files = list(result_dir.rglob('*_content_list.json'))
-            if content_list_files:
-                content_list_file = content_list_files[0]
-                logger.info(f"📄 读取 content_list 文件: {content_list_file}")
-
-                content_data = read_json_file(content_list_file)
-                if content_data is not None:
-                    response['data']['content_list'] = {
-                        'content': content_data,
-                        'file_name': content_list_file.name
-                    }
-
-                    if include_metadata:
-                        metadata = get_file_metadata(content_list_file)
-                        if metadata:
-                            response['data']['content_list']['metadata'] = metadata
-
-        # 3. 处理 Middle JSON
-        if 'middle_json' in fields:
-            middle_json_files = list(result_dir.rglob('*_middle.json'))
-            if middle_json_files:
-                middle_json_file = middle_json_files[0]
-                logger.info(f"📄 读取 middle json 文件: {middle_json_file}")
-
-                middle_data = read_json_file(middle_json_file)
-                if middle_data is not None:
-                    response['data']['middle_json'] = {
-                        'content': middle_data,
-                        'file_name': middle_json_file.name
-                    }
-
-                    if include_metadata:
-                        metadata = get_file_metadata(middle_json_file)
-                        if metadata:
-                            response['data']['middle_json']['metadata'] = metadata
-
-        # 4. 处理 Model Output JSON
-        if 'model_output' in fields:
-            model_output_files = list(result_dir.rglob('*_model.json'))
-            if model_output_files:
-                model_output_file = model_output_files[0]
-                logger.info(f"📄 读取模型输出文件: {model_output_file}")
-
-                model_data = read_json_file(model_output_file)
-                if model_data is not None:
-                    response['data']['model_output'] = {
-                        'content': model_data,
-                        'file_name': model_output_file.name
-                    }
-
-                    if include_metadata:
-                        metadata = get_file_metadata(model_output_file)
-                        if metadata:
-                            response['data']['model_output']['metadata'] = metadata
-
-        # 5. 处理图片
-        if 'images' in fields:
-            image_dirs = list(result_dir.rglob('images'))
-            if image_dirs:
-                image_dir = image_dirs[0]
-                logger.info(f"🖼️  获取图片信息目录: {image_dir}")
-
-                images_info = get_images_info(image_dir, upload_images)
-                response['data']['images'] = images_info
-
-        # 6. 处理 Layout PDF
-        if 'layout_pdf' in fields:
-            layout_pdf_files = list(result_dir.rglob('*_layout.pdf'))
-            if layout_pdf_files:
-                layout_pdf_file = layout_pdf_files[0]
-                response['data']['layout_pdf'] = {
-                    'file_name': layout_pdf_file.name,
-                    'path': str(layout_pdf_file.relative_to(result_dir))
+                        data['content_list']['metadata'] = metadata
+    
+    # 3. 处理 Middle JSON
+    if 'middle_json' in fields:
+        middle_json_files = list(result_dir.rglob('*_middle.json'))
+        if middle_json_files:
+            middle_json_file = middle_json_files[0]
+            logger.info(f"📄 读取 middle json 文件: {middle_json_file}")
+            
+            middle_data = read_json_file(middle_json_file)
+            if middle_data is not None:
+                data['middle_json'] = {
+                    'content': middle_data,
+                    'file_name': middle_json_file.name
                 }
-
+                
                 if include_metadata:
-                    metadata = get_file_metadata(layout_pdf_file)
+                    metadata = get_file_metadata(middle_json_file)
                     if metadata:
-                        response['data']['layout_pdf']['metadata'] = metadata
-
-        # 7. 处理 Span PDF
-        if 'span_pdf' in fields:
-            span_pdf_files = list(result_dir.rglob('*_span.pdf'))
-            if span_pdf_files:
-                span_pdf_file = span_pdf_files[0]
-                response['data']['span_pdf'] = {
-                    'file_name': span_pdf_file.name,
-                    'path': str(span_pdf_file.relative_to(result_dir))
+                        data['middle_json']['metadata'] = metadata
+    
+    # 4. 处理 Model Output JSON
+    if 'model_output' in fields:
+        model_output_files = list(result_dir.rglob('*_model.json'))
+        if model_output_files:
+            model_output_file = model_output_files[0]
+            logger.info(f"📄 读取模型输出文件: {model_output_file}")
+            
+            model_data = read_json_file(model_output_file)
+            if model_data is not None:
+                data['model_output'] = {
+                    'content': model_data,
+                    'file_name': model_output_file.name
                 }
-
+                
                 if include_metadata:
-                    metadata = get_file_metadata(span_pdf_file)
+                    metadata = get_file_metadata(model_output_file)
                     if metadata:
-                        response['data']['span_pdf']['metadata'] = metadata
+                        data['model_output']['metadata'] = metadata
+    
+    # 5. 处理图片
+    if 'images' in fields:
+        image_dirs = list(result_dir.rglob('images'))
+        if image_dirs:
+            image_dir = image_dirs[0]
+            logger.info(f"🖼️  获取图片信息目录: {image_dir}")
+            
+            images_info = get_images_info(image_dir)
+            data['images'] = images_info
+    
+    # 6. 处理 Layout PDF
+    if 'layout_pdf' in fields:
+        layout_pdf_files = list(result_dir.rglob('*_layout.pdf'))
+        if layout_pdf_files:
+            layout_pdf_file = layout_pdf_files[0]
+            data['layout_pdf'] = {
+                'file_name': layout_pdf_file.name,
+                'path': str(layout_pdf_file.relative_to(result_dir))
+            }
+            
+            if include_metadata:
+                metadata = get_file_metadata(layout_pdf_file)
+                if metadata:
+                    data['layout_pdf']['metadata'] = metadata
+    
+    # 7. 处理 Span PDF
+    if 'span_pdf' in fields:
+        span_pdf_files = list(result_dir.rglob('*_span.pdf'))
+        if span_pdf_files:
+            span_pdf_file = span_pdf_files[0]
+            data['span_pdf'] = {
+                'file_name': span_pdf_file.name,
+                'path': str(span_pdf_file.relative_to(result_dir))
+            }
+            
+            if include_metadata:
+                metadata = get_file_metadata(span_pdf_file)
+                if metadata:
+                    data['span_pdf']['metadata'] = metadata
+    
+    # 8. 处理 Origin PDF
+    if 'origin_pdf' in fields:
+        origin_pdf_files = list(result_dir.rglob('*_origin.pdf'))
+        if origin_pdf_files:
+            origin_pdf_file = origin_pdf_files[0]
+            data['origin_pdf'] = {
+                'file_name': origin_pdf_file.name,
+                'path': str(origin_pdf_file.relative_to(result_dir))
+            }
+            
+            if include_metadata:
+                metadata = get_file_metadata(origin_pdf_file)
+                if metadata:
+                    data['origin_pdf']['metadata'] = metadata
+    
+    return data
 
-        # 8. 处理 Origin PDF
-        if 'origin_pdf' in fields:
-            origin_pdf_files = list(result_dir.rglob('*_origin.pdf'))
-            if origin_pdf_files:
-                origin_pdf_file = origin_pdf_files[0]
-                response['data']['origin_pdf'] = {
-                    'file_name': origin_pdf_file.name,
-                    'path': str(origin_pdf_file.relative_to(result_dir))
-                }
 
-                if include_metadata:
-                    metadata = get_file_metadata(origin_pdf_file)
-                    if metadata:
-                        response['data']['origin_pdf']['metadata'] = metadata
-
-        logger.info(f"✅ 成功获取任务 {task_id} 的完整数据")
-
-    except Exception as e:
-        logger.error(f"❌ 获取任务 {task_id} 的完整数据失败: {e}")
-        logger.exception(e)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")  
-
-    return response
-
-
-@app.get("/api/v1/tasks/{task_id}")
+@app.get("/api/v1/tasks/{task_id}", summary="查询任务状态", tags=["任务管理"])
 async def get_task_status(
     task_id: str,
-    upload_images: bool = Query(False, description="是否上传图片到MinIO并替换链接（仅当任务完成时有效）"),
-    include_data: bool = Query(False, description="是否返回解析后的 markdown 内容，默认不返回以减小响应体")
+    include_data: bool = Query(False, description="是否返回解析后的 markdown 内容（向后兼容参数，等同于 include_fields=md）"),
+    include_fields: Optional[str] = Query(None, description="需要返回的字段，逗号分隔：md,content_list,middle_json,model_output,images,layout_pdf,span_pdf,origin_pdf。不传则只返回任务状态和资源链接"),
+    include_metadata: bool = Query(True, description="是否包含文件元数据（仅当 include_fields 指定时有效）")
 ):
     """
     查询任务状态和详情
     
-    当任务完成时，会自动返回解析后的 Markdown 内容（data 字段）
-    可选择是否上传图片到 MinIO 并替换为 URL
+    功能说明：
+    - 默认只返回任务状态和资源链接（assets字段），响应体小
+    - 通过 include_fields 参数可以灵活选择需要返回的数据字段
+    - include_data 参数为向后兼容，等同于 include_fields=md
+    
+    支持的字段：
+    - md: Markdown 内容
+    - content_list: 结构化内容列表 JSON
+    - middle_json: 中间处理结果 JSON
+    - model_output: 模型原始输出 JSON
+    - images: 图片列表
+    - layout_pdf, span_pdf, origin_pdf: PDF 文件信息
     """
     task = db.get_task(task_id)
     
@@ -768,40 +610,34 @@ async def get_task_status(
             if assets:
                 response['assets'] = assets
 
-            # 只有在显式请求时才返回解析内容，避免响应过大
+            # 根据参数决定是否加载数据内容
+            fields_to_load = []
+            
+            # 处理向后兼容参数 include_data
             if include_data:
-                # 递归查找 Markdown 文件（MinerU 输出结构：task_id/filename/auto/*.md）
-                md_files = list(result_dir.rglob('*.md'))
-                logger.info(f"📄 找到 {len(md_files)} 个 markdown 文件: {[f.relative_to(result_dir) for f in md_files]}")
-                
-                if md_files:
-                    try:
-                        md_file = md_files[0]
-                        logger.info(f"📖 正在读取 markdown 文件: {md_file}")
-                        with open(md_file, 'r', encoding='utf-8') as f:
-                            md_content = f.read()
-                        
-                        logger.info(f"✅ Markdown 内容加载完成，长度: {len(md_content)} 字符")
-                        
-                        image_dir = md_file.parent / 'images'
-                        if upload_images and image_dir.exists():
-                            logger.info(f"🖼️  正在处理任务 {task_id} 的图片，upload_images={upload_images}")
-                            md_content = process_markdown_images(md_content, image_dir, upload_images)
-                        
-                        response['data'] = {
-                            'markdown_file': md_file.name,
-                            'content': md_content,
-                            'images_uploaded': upload_images,
-                            'has_images': image_dir.exists() if not upload_images else None
-                        }
-                        logger.info(f"✅ 已成功添加响应 data 字段")
-                        
-                    except Exception as e:
-                        logger.error(f"❌ 读取 Markdown 内容失败: {e}")
-                        logger.exception(e)
-                        response['data'] = None
-                else:
-                    logger.warning(f"⚠️  在 {result_dir} 中未找到 markdown 文件")
+                fields_to_load.append('md')
+            
+            # 处理 include_fields 参数
+            if include_fields:
+                fields_to_load.extend([f.strip() for f in include_fields.split(',')])
+            
+            # 去重
+            fields_to_load = list(set(fields_to_load))
+            
+            # 如果有字段需要加载，则加载数据
+            if fields_to_load:
+                logger.info(f"📦 正在获取任务 {task_id} 的数据，包含字段: {fields_to_load}")
+                try:
+                    data = _load_task_data_fields(result_dir, fields_to_load, include_metadata)
+                    if data:
+                        response['data'] = data
+                        logger.info(f"✅ 成功获取任务 {task_id} 的数据")
+                    else:
+                        logger.warning(f"⚠️  未找到任何数据文件")
+                except Exception as e:
+                    logger.error(f"❌ 获取任务 {task_id} 的数据失败: {e}")
+                    logger.exception(e)
+                    response['data'] = None
         else:
             logger.error(f"❌ 结果目录不存在: {result_dir}")
     elif task['status'] == 'completed':
@@ -812,7 +648,7 @@ async def get_task_status(
     return response
 
 
-@app.delete("/api/v1/tasks/{task_id}")
+@app.delete("/api/v1/tasks/{task_id}", summary="取消任务", tags=["任务管理"])
 async def cancel_task(task_id: str):
     """
     取消任务（仅限 pending 状态）
@@ -842,7 +678,7 @@ async def cancel_task(task_id: str):
         )
 
 
-@app.get("/api/v1/queue/stats")
+@app.get("/api/v1/queue/stats", summary="队列统计", tags=["队列管理"])
 async def get_queue_stats():
     """
     获取队列统计信息
@@ -857,7 +693,7 @@ async def get_queue_stats():
     }
 
 
-@app.get("/api/v1/queue/tasks")
+@app.get("/api/v1/queue/tasks", summary="任务列表", tags=["队列管理"])
 async def list_tasks(
     status: Optional[str] = Query(None, description="筛选状态: pending/processing/completed/failed"),
     limit: int = Query(100, description="返回数量限制", le=1000)
@@ -884,7 +720,7 @@ async def list_tasks(
     }
 
 
-@app.post("/api/v1/admin/cleanup")
+@app.post("/api/v1/admin/cleanup", summary="清理旧任务", tags=["管理接口"])
 async def cleanup_old_tasks(days: Optional[int] = Query(
     None,
     description="清理N天前的任务；不传则清理全部任务（含pending/processing）"
@@ -903,7 +739,7 @@ async def cleanup_old_tasks(days: Optional[int] = Query(
     }
 
 
-@app.post("/api/v1/admin/reset-stale")
+@app.post("/api/v1/admin/reset-stale", summary="重置超时任务", tags=["管理接口"])
 async def reset_stale_tasks(timeout_minutes: int = Query(60, description="超时时间（分钟）")):
     """
     重置超时的 processing 任务（管理接口）
@@ -919,7 +755,7 @@ async def reset_stale_tasks(timeout_minutes: int = Query(60, description="超时
     }
 
 
-@app.get("/api/v1/health")
+@app.get("/api/v1/health", summary="健康检查", tags=["监控接口"])
 async def health_check():
     """
     健康检查接口
@@ -949,7 +785,7 @@ if __name__ == '__main__':
     # 从环境变量读取端口，默认为39020
     api_port = int(os.getenv('API_PORT', '39020'))
     
-    logger.info("🚀 启动 MinerU Tianshu API Server...")
+    logger.info("🚀 启动聚光 MinerU API Server...")
     logger.info(f"📖 API 文档: http://localhost:{api_port}/docs")
     
     uvicorn.run(

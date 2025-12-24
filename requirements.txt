@@ -2,7 +2,7 @@
 # 天枢项目依赖
 
 # Core MinerU
-mineru[core]>=2.5.0
+mineru[core]>=2.6.7
 
 # Image Augmentation (Version Pinned for Compatibility)
 albumentations>=1.4.4,<2.0.0

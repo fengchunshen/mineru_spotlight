@@ -5,9 +5,15 @@
 ## 核心功能
 
 ### 文档解析
-- **PDF和图片解析** (.pdf, .png, .jpg, .jpeg, .bmp, .tiff, .webp) - 使用 MinerU GPU加速解析
-- **Office文档解析** (.docx, .doc, .xlsx, .xls, .pptx, .ppt) - 使用 MarkItDown 快速解析
-- **网页和文本解析** (.html, .htm, .txt, .md, .csv, .json, .xml等) - 使用 MarkItDown 解析
+- **PDF和图片解析** (.pdf, .png, .jpg, .jpeg, .bmp, .tiff, .webp) - 直接使用 MinerU GPU加速解析
+- **Office文档解析** (.docx, .doc, .xlsx, .xls, .pptx, .ppt) - 先转换为PDF，再使用 MinerU GPU加速解析
+- **网页和文本解析** (.html, .htm, .txt, .md, .csv, .json, .xml等) - 先转换为PDF，再使用 MinerU GPU加速解析
+
+**注意**: 非PDF文档需要先安装 LibreOffice 才能进行转换。安装方法：
+- Ubuntu/Debian: `sudo apt-get install libreoffice`
+- CentOS/RHEL: `sudo yum install libreoffice`
+- macOS: `brew install --cask libreoffice`
+- Windows: 从 https://www.libreoffice.org/ 下载安装
 
 ### 系统特性
 - ✅ **异步处理** - 客户端立即响应，任务后台处理
@@ -518,7 +524,7 @@ while True:
 ## 技术栈
 
 - **Web框架**: FastAPI + Uvicorn
-- **解析器**: MinerU (PDF/图片) + MarkItDown (Office/文本/HTML等)
+- **解析器**: MinerU (统一解析，非PDF文档先通过LibreOffice转换为PDF)
 - **GPU调度**: LitServe (自动负载均衡)
 - **存储**: SQLite (并发安全) + 天翼云OSS (可选)
 - **日志**: Loguru

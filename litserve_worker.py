@@ -13,6 +13,8 @@ import threading
 import signal
 import atexit
 import re
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional, Dict, List
 from urllib.parse import urlparse, urlunparse, quote
@@ -107,13 +109,14 @@ def patch_hf_snapshot_with_modelscope(cache_dir: str = DEFAULT_MODEL_CACHE_DIR):
 # 在导入 MinerU 前打补丁，确保内部使用的 HF 下载也能回退
 patch_hf_snapshot_with_modelscope()
 
-# 尝试导入 markitdown
+# 注意：MarkItDown 已不再使用，所有文档统一先转换为PDF再使用MinerU解析
+# 保留此代码仅用于向后兼容，实际不会被调用
 try:
     from markitdown import MarkItDown
     MARKITDOWN_AVAILABLE = True
 except ImportError:
     MARKITDOWN_AVAILABLE = False
-    logger.warning("⚠️  未安装 markitdown，Office 格式解析将被禁用")
+    # 不再需要警告，因为已改用PDF转换方式
 
 
 class MinerUWorkerAPI(ls.LitAPI):
@@ -121,17 +124,19 @@ class MinerUWorkerAPI(ls.LitAPI):
     LitServe API Worker
     
     Worker 主动循环拉取任务，利用 LitServe 的自动 GPU 负载均衡
-    支持两种解析方式：
-    - PDF/图片 -> MinerU 解析（GPU 加速）
-    - 其他所有格式 -> MarkItDown 解析（快速处理）
+    统一解析方式：
+    - PDF/图片 -> 直接使用 MinerU 解析（GPU 加速）
+    - 其他格式 -> 先转换为PDF，再使用 MinerU 解析（GPU 加速）
     
     新模式：每个 worker 启动后持续循环拉取任务，处理完一个立即拉取下一个
     """
     
     # 支持的文件格式定义
-    # MinerU 专用格式：PDF 和图片
+    # MinerU 专用格式：PDF 和图片（可直接解析）
     PDF_IMAGE_FORMATS = {'.pdf', '.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.tif', '.webp'}
-    # 其他所有格式都使用 MarkItDown 解析
+    # 需要转换为PDF的格式（Office文档、HTML、文本等）
+    CONVERTIBLE_FORMATS = {'.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt', 
+                          '.html', '.htm', '.txt', '.md', '.csv', '.json', '.xml', '.rtf'}
     
     def __init__(self, output_dir='/tmp/mineru_spotlight_output', worker_id_prefix='spotlight', 
                  poll_interval=0.5, enable_worker_loop=True):
@@ -604,10 +609,11 @@ class MinerUWorkerAPI(ls.LitAPI):
             else:
                 os.environ['MINERU_VIRTUAL_VRAM_SIZE'] = '1'
         
-        # 初始化 MarkItDown（如果可用）
+        # 注意：MarkItDown 已不再使用，保留仅用于向后兼容
+        # 现在所有文档统一先转换为PDF再使用MinerU解析
         if MARKITDOWN_AVAILABLE:
             self.markitdown = MarkItDown()
-            logger.info(f"✅ MarkItDown 已初始化，可用于 Office 格式解析")
+            logger.debug(f"MarkItDown 已初始化（已废弃，不再使用）")
         
         logger.info(f"✅ Worker {self.worker_id} 准备就绪")
         logger.info(f"   设备: {device_mode}")
@@ -710,34 +716,53 @@ class MinerUWorkerAPI(ls.LitAPI):
         
         logger.info(f"🔄 正在处理任务 {task_id}: {file_name}")
         
+        # 初始化变量（在try块外，以便finally块可以访问）
+        converted_pdf_path = None
+        
         try:
             # 准备输出目录
             output_path = self.output_dir / task_id
             output_path.mkdir(parents=True, exist_ok=True)
             
-            # 判断文件类型并选择解析方式
+            # 判断文件类型并选择处理方式
             file_type = self._get_file_type(file_path)
+            actual_file_path = Path(file_path)
+            actual_file_name = file_name
             
             if file_type == 'pdf_image':
-                # 使用 MinerU 解析 PDF 和图片
-                self._parse_with_mineru(
-                    file_path=Path(file_path),
-                    file_name=file_name,
-                    task_id=task_id,
-                    backend=backend,
-                    options=options,
-                    output_path=output_path
-                )
+                # PDF/图片格式，直接使用 MinerU 解析
+                logger.info(f"📄 文件为 PDF/图片格式，直接使用 MinerU 解析")
                 parse_method = 'MinerU'
-                
-            else:  # file_type == 'markitdown'
-                # 使用 markitdown 解析所有其他格式
-                self._parse_with_markitdown(
+            else:
+                # 非PDF格式，先转换为PDF，再使用 MinerU 解析
+                logger.info(f"🔄 文件为 {Path(file_path).suffix} 格式，先转换为PDF...")
+                # 获取原始文件名（去掉扩展名），用于命名转换后的PDF
+                original_name_stem = Path(file_name).stem
+                converted_pdf_path = self._convert_to_pdf(
                     file_path=Path(file_path),
-                    file_name=file_name,
-                    output_path=output_path
+                    output_path=output_path,
+                    task_id=task_id,
+                    target_name=original_name_stem  # 使用原始文件名
                 )
-                parse_method = 'MarkItDown'
+                if converted_pdf_path is None or not converted_pdf_path.exists():
+                    raise RuntimeError(f"文件转换为PDF失败: {file_path}")
+                
+                # 使用转换后的PDF文件，但保持原始文件名用于MinerU解析
+                actual_file_path = converted_pdf_path
+                # 使用原始文件名（去掉扩展名），MinerU会自动添加扩展名
+                actual_file_name = original_name_stem
+                parse_method = 'MinerU (转换后)'
+                logger.info(f"✅ PDF转换成功: {converted_pdf_path}")
+            
+            # 统一使用 MinerU 解析
+            self._parse_with_mineru(
+                file_path=actual_file_path,
+                file_name=actual_file_name,
+                task_id=task_id,
+                backend=backend,
+                options=options,
+                output_path=output_path
+            )
             
             # 更新状态为成功
             success = self.db.update_task_status(
@@ -766,6 +791,13 @@ class MinerUWorkerAPI(ls.LitAPI):
             try:
                 if Path(file_path).exists():
                     Path(file_path).unlink()
+                # 清理转换后的PDF临时文件（如果存在）
+                if converted_pdf_path and converted_pdf_path.exists() and converted_pdf_path != Path(file_path):
+                    try:
+                        converted_pdf_path.unlink()
+                        logger.debug(f"已清理转换后的PDF临时文件: {converted_pdf_path}")
+                    except Exception as e:
+                        logger.warning(f"清理转换后的PDF文件 {converted_pdf_path} 失败: {e}")
             except Exception as e:
                 logger.warning(f"清理临时文件 {file_path} 失败: {e}")
     
@@ -785,16 +817,16 @@ class MinerUWorkerAPI(ls.LitAPI):
             file_path: 文件路径
             
         Returns:
-            'pdf_image': PDF 或图片格式，使用 MinerU 解析
-            'markitdown': 其他所有格式，使用 markitdown 解析
+            'pdf_image': PDF 或图片格式，直接使用 MinerU 解析
+            'convertible': 需要转换为PDF的格式（Office、HTML、文本等）
         """
         suffix = Path(file_path).suffix.lower()
         
         if suffix in self.PDF_IMAGE_FORMATS:
             return 'pdf_image'
         else:
-            # 所有非 PDF/图片格式都使用 markitdown
-            return 'markitdown'
+            # 所有非 PDF/图片格式都需要先转换为PDF
+            return 'convertible'
     
     def _parse_with_mineru(self, file_path: Path, file_name: str, task_id: str, 
                            backend: str, options: dict, output_path: Path):
@@ -834,29 +866,152 @@ class MinerUWorkerAPI(ls.LitAPI):
             except Exception as e:
                 logger.debug(f"任务 {task_id} 清理显存失败: {e}")
     
-    def _parse_with_markitdown(self, file_path: Path, file_name: str, 
-                               output_path: Path):
+    def _convert_to_pdf(self, file_path: Path, output_path: Path, task_id: str, target_name: Optional[str] = None) -> Optional[Path]:
         """
-        使用 markitdown 解析文档（支持 Office、HTML、文本等多种格式）
+        将非PDF文档转换为PDF格式（使用LibreOffice）
         
         Args:
-            file_path: 文件路径
-            file_name: 文件名
-            output_path: 输出路径
+            file_path: 源文件路径
+            output_path: 输出目录
+            task_id: 任务ID
+            target_name: 目标PDF文件名（不含扩展名），如果为None则使用源文件名
+            
+        Returns:
+            转换后的PDF文件路径，失败返回None
         """
-        if not MARKITDOWN_AVAILABLE or self.markitdown is None:
-            raise RuntimeError("markitdown is not available. Please install it: pip install markitdown")
+        # 检查LibreOffice是否可用
+        libreoffice_cmd = self._find_libreoffice()
+        if not libreoffice_cmd:
+            raise RuntimeError(
+                "LibreOffice 未安装或未找到。"
+                "请安装 LibreOffice: "
+                "Ubuntu/Debian: sudo apt-get install libreoffice, "
+                "CentOS/RHEL: sudo yum install libreoffice, "
+                "macOS: brew install --cask libreoffice, "
+                "Windows: 从 https://www.libreoffice.org/ 下载安装"
+            )
         
-        logger.info(f"📊 使用 MarkItDown 解析: {file_name}")
+        logger.info(f"🔄 使用 LibreOffice 转换文档为PDF: {file_path.name}")
         
-        # 使用 markitdown 转换文档
-        result = self.markitdown.convert(str(file_path))
+        # 创建临时输出目录（LibreOffice需要输出目录）
+        temp_output_dir = output_path / f"temp_pdf_conversion_{task_id}"
+        temp_output_dir.mkdir(parents=True, exist_ok=True)
         
-        # 保存为 markdown 文件
-        output_file = output_path / f"{Path(file_name).stem}.md"
-        output_file.write_text(result.text_content, encoding='utf-8')
+        try:
+            # 使用LibreOffice命令行转换
+            # --headless: 无界面模式
+            # --convert-to pdf: 转换为PDF
+            # --outdir: 输出目录
+            cmd = [
+                libreoffice_cmd,
+                '--headless',
+                '--convert-to', 'pdf',
+                '--outdir', str(temp_output_dir),
+                str(file_path)
+            ]
+            
+            logger.debug(f"执行命令: {' '.join(cmd)}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5分钟超时
+                check=False
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"LibreOffice 转换失败: {result.stderr}")
+                return None
+            
+            # 查找生成的PDF文件（LibreOffice会使用原文件名，扩展名改为.pdf）
+            # 如果指定了target_name，使用target_name；否则使用源文件名
+            expected_pdf_name = f"{target_name if target_name else file_path.stem}.pdf"
+            pdf_file = temp_output_dir / expected_pdf_name
+            
+            if not pdf_file.exists():
+                # 尝试查找任何PDF文件（LibreOffice可能使用不同的命名规则）
+                pdf_files = list(temp_output_dir.glob("*.pdf"))
+                if pdf_files:
+                    # 找到PDF文件后，如果指定了target_name，重命名为目标名称
+                    found_pdf = pdf_files[0]
+                    if target_name and found_pdf.stem != target_name:
+                        # 重命名为目标名称
+                        renamed_pdf = temp_output_dir / expected_pdf_name
+                        found_pdf.rename(renamed_pdf)
+                        pdf_file = renamed_pdf
+                        logger.info(f"已将PDF文件重命名为: {expected_pdf_name}")
+                    else:
+                        pdf_file = found_pdf
+                        logger.warning(f"未找到预期的PDF文件，使用找到的文件: {pdf_file}")
+                else:
+                    logger.error(f"转换后未找到PDF文件，输出目录: {temp_output_dir}")
+                    return None
+            
+            # 将PDF文件移动到输出目录的根目录，使用目标名称
+            final_pdf_path = output_path / expected_pdf_name
+            if pdf_file != final_pdf_path:
+                # 如果目标文件已存在，先删除
+                if final_pdf_path.exists():
+                    final_pdf_path.unlink()
+                pdf_file.rename(final_pdf_path)
+            
+            logger.info(f"✅ PDF转换成功: {final_pdf_path}")
+            return final_pdf_path
+            
+        except subprocess.TimeoutExpired:
+            logger.error(f"PDF转换超时（超过5分钟）: {file_path}")
+            return None
+        except Exception as e:
+            logger.error(f"PDF转换异常: {e}")
+            return None
+        finally:
+            # 清理临时目录
+            try:
+                if temp_output_dir.exists():
+                    # 只删除目录本身，不删除其中的文件（可能已经移动）
+                    for item in temp_output_dir.iterdir():
+                        if item.is_file():
+                            item.unlink()
+                    temp_output_dir.rmdir()
+            except Exception as e:
+                logger.warning(f"清理临时转换目录失败: {e}")
+    
+    def _find_libreoffice(self) -> Optional[str]:
+        """
+        查找LibreOffice可执行文件路径
         
-        logger.info(f"📝 Markdown 已保存到: {output_file}")
+        Returns:
+            LibreOffice命令路径，未找到返回None
+        """
+        # 常见的LibreOffice命令路径
+        possible_paths = [
+            'soffice',  # 系统PATH中
+            'libreoffice',  # 系统PATH中（某些系统）
+            '/usr/bin/soffice',  # Linux标准路径
+            '/usr/bin/libreoffice',  # Linux标准路径
+            '/Applications/LibreOffice.app/Contents/MacOS/soffice',  # macOS
+            'C:\\Program Files\\LibreOffice\\program\\soffice.exe',  # Windows
+            'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',  # Windows 32位
+        ]
+        
+        for path in possible_paths:
+            try:
+                # 检查命令是否存在
+                result = subprocess.run(
+                    [path, '--version'],
+                    capture_output=True,
+                    timeout=5,
+                    check=False
+                )
+                if result.returncode == 0 or 'LibreOffice' in result.stdout.decode('utf-8', errors='ignore'):
+                    logger.debug(f"找到 LibreOffice: {path}")
+                    return path
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+            except Exception:
+                continue
+        
+        return None
     
     def predict(self, action):
         """

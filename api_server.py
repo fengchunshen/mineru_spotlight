@@ -265,7 +265,7 @@ async def root():
 
 @app.post("/api/v1/tasks/submit", summary="提交任务", tags=["任务管理"])
 async def submit_task(
-    file: UploadFile = File(..., description="文档文件: PDF/图片(MinerU解析) 或 Office/HTML/文本等(MarkItDown解析)"),
+    file: UploadFile = File(..., description="文档文件: PDF/图片直接解析，Office/HTML/文本等先转换为PDF再解析（需安装LibreOffice）"),
     backend: str = Form('pipeline', description="处理后端: pipeline/vlm-transformers/vlm-vllm-engine"),
     lang: str = Form('ch', description="语言: ch/en/korean/japan等"),
     method: str = Form('auto', description="解析方法: auto/txt/ocr"),

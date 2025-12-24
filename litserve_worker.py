@@ -36,6 +36,16 @@ DEFAULT_MODEL_CACHE_DIR = os.getenv(
 )
 
 
+def _should_log_startup() -> bool:
+    """
+    是否输出启动阶段的噪音日志。
+    - 默认关闭（避免多进程 worker 启动时重复刷屏）
+    - 如需开启：设置环境变量 MINERU_STARTUP_LOGS=1/true/yes
+    """
+    v = (os.getenv('MINERU_STARTUP_LOGS') or '').strip().lower()
+    return v in {'1', 'true', 'yes', 'y', 'on'}
+
+
 def setup_model_cache_dir(cache_dir: str = DEFAULT_MODEL_CACHE_DIR):
     """
     设置模型下载/缓存目录，覆盖 huggingface 和 modelscope 的默认缓存。
@@ -48,7 +58,8 @@ def setup_model_cache_dir(cache_dir: str = DEFAULT_MODEL_CACHE_DIR):
     os.environ.setdefault('HF_HOME', str(cache_path))
     os.environ.setdefault('TRANSFORMERS_CACHE', str(cache_path))
     os.environ.setdefault('MODELSCOPE_CACHE', str(cache_path))
-    logger.info(f"📦 模型缓存目录设置为 {cache_path}")
+    if _should_log_startup():
+        logger.info(f"📦 模型缓存目录设置为 {cache_path}")
 
 
 # 确保在导入和 Worker 启动前设置缓存目录
@@ -71,7 +82,8 @@ def patch_hf_snapshot_with_modelscope(cache_dir: str = DEFAULT_MODEL_CACHE_DIR):
         repo_id = kwargs.get('repo_id') or (args[0] if args else None)
         revision = kwargs.get('revision')
         cache_dir_arg = kwargs.get('cache_dir') or cache_dir
-        logger.info(f"📦 准备下载模型: repo_id={repo_id}, revision={revision}, cache_dir={cache_dir_arg}")
+        if _should_log_startup():
+            logger.info(f"📦 准备下载模型: repo_id={repo_id}, revision={revision}, cache_dir={cache_dir_arg}")
         try:
             return hf_snapshot_download(*args, **kwargs)
         except Exception as hf_err:
@@ -88,7 +100,8 @@ def patch_hf_snapshot_with_modelscope(cache_dir: str = DEFAULT_MODEL_CACHE_DIR):
                 raise RuntimeError(f"HuggingFace 下载失败且 ModelScope 兜底失败：{ms_err}") from hf_err
 
     huggingface_hub.snapshot_download = _patched_snapshot_download
-    logger.info("🔁 huggingface_hub.snapshot_download 已打补丁，失败时回退到 ModelScope")
+    if _should_log_startup():
+        logger.info("🔁 huggingface_hub.snapshot_download 已打补丁，失败时回退到 ModelScope")
 
 
 # 在导入 MinerU 前打补丁，确保内部使用的 HF 下载也能回退

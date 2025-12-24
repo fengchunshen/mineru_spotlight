@@ -304,8 +304,14 @@ async def submit_task(
             },
             priority=priority
         )
-        
-        logger.info(f"✅ 任务已提交: {task_id} - {file.filename} (优先级: {priority})")
+
+        # submit 接口日志尽量保持精简：INFO 只打印 task_id；详细参数放到 DEBUG
+        logger.info(f"✅ 任务已提交: task_id={task_id}")
+        logger.debug(
+            f"submit_detail: task_id={task_id}, file_name={file.filename}, "
+            f"priority={priority}, backend={backend}, lang={lang}, method={method}, "
+            f"formula_enable={formula_enable}, table_enable={table_enable}"
+        )
         
         return {
             'success': True,

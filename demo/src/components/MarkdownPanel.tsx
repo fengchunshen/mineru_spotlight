@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { memo, useMemo, type CSSProperties } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
@@ -11,6 +11,67 @@ type Props = {
   items: ContentItem[]
   imageBase: string
 }
+
+type MarkdownContentProps = {
+  content: string
+  imageBase: string
+}
+
+// 只根据内容和图片基路径渲染一次 Markdown，避免 hover/active 变化导致整页 Markdown 反复重算
+const MarkdownContent = memo(
+  function MarkdownContent({ content, imageBase }: MarkdownContentProps) {
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex, rehypeRaw]}
+        components={{
+          img: (props) => {
+            // 处理图片路径：如果路径包含 images/ 前缀，则去掉；否则直接使用文件名
+            let imageSrc = props.src || ''
+
+            // 如果路径是绝对路径（以 http:// 或 https:// 开头），直接使用
+            if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
+              return (
+                // eslint-disable-next-line jsx-a11y/alt-text
+                <img {...props} src={imageSrc} className="md-img" />
+              )
+            }
+
+            // 如果路径以 images/ 开头，去掉这个前缀
+            if (imageSrc.startsWith('images/')) {
+              imageSrc = imageSrc.replace(/^images\//, '')
+            }
+
+            // 对文件名进行URL编码（处理特殊字符）
+            const encodedFileName = imageSrc
+              .split('/')
+              .map((part) => encodeURIComponent(part))
+              .join('/')
+
+            // 拼接完整路径
+            const finalSrc = `${imageBase}/${encodedFileName}`
+
+            return (
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <img
+                {...props}
+                src={finalSrc}
+                className="md-img"
+                onError={() => {
+                  // 如果图片加载失败，输出调试信息
+                  console.error('图片加载失败:', finalSrc, '原始路径:', props.src)
+                }}
+              />
+            )
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    )
+  },
+  (prev, next) => prev.content === next.content && prev.imageBase === next.imageBase,
+)
 
 export function MarkdownPanel({ items, imageBase }: Props) {
   const { activeId, hoverId, setActiveId, setHoverId, setCurrentPage } = useViewerStore()
@@ -83,6 +144,7 @@ export function MarkdownPanel({ items, imageBase }: Props) {
               const hoverBg = hexToRgba(color, 0.1)
               const activeBg = hexToRgba(color, 0.18)
               const activeShadow = hexToRgba(color, 0.2)
+              const markdownContent = item.content || item.text || ''
               
               return (
                 <div
@@ -94,7 +156,7 @@ export function MarkdownPanel({ items, imageBase }: Props) {
                     '--segment-hover-bg': hoverBg,
                     '--segment-active-bg': activeBg,
                     '--segment-active-shadow': activeShadow,
-                  } as React.CSSProperties}
+                  } as CSSProperties}
                   onMouseEnter={() => {
                     setHoverId(item.id)
                   }}
@@ -106,53 +168,7 @@ export function MarkdownPanel({ items, imageBase }: Props) {
                     setCurrentPage(item.page_idx + 1)
                   }}
                 >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex, rehypeRaw]}
-                    components={{
-                      img: (props) => {
-                        // 处理图片路径：如果路径包含 images/ 前缀，则去掉；否则直接使用文件名
-                        let imageSrc = props.src || ''
-                        
-                        // 如果路径是绝对路径（以 http:// 或 https:// 开头），直接使用
-                        if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
-                          return (
-                            // eslint-disable-next-line jsx-a11y/alt-text
-                            <img {...props} src={imageSrc} className="md-img" />
-                          )
-                        }
-                        
-                        // 如果路径以 images/ 开头，去掉这个前缀
-                        if (imageSrc.startsWith('images/')) {
-                          imageSrc = imageSrc.replace(/^images\//, '')
-                        }
-                        
-                        // 对文件名进行URL编码（处理特殊字符）
-                        const encodedFileName = imageSrc
-                          .split('/')
-                          .map(part => encodeURIComponent(part))
-                          .join('/')
-                        
-                        // 拼接完整路径
-                        const finalSrc = `${imageBase}/${encodedFileName}`
-                        
-                        return (
-                          // eslint-disable-next-line jsx-a11y/alt-text
-                          <img 
-                            {...props} 
-                            src={finalSrc} 
-                            className="md-img"
-                            onError={() => {
-                              // 如果图片加载失败，输出调试信息
-                              console.error('图片加载失败:', finalSrc, '原始路径:', props.src)
-                            }}
-                          />
-                        )
-                      },
-                    }}
-                  >
-                    {item.content || item.text || ''}
-                  </ReactMarkdown>
+                  <MarkdownContent content={markdownContent} imageBase={imageBase} />
                 </div>
               )
             })}

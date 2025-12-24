@@ -4,7 +4,6 @@ import type { ViewerConfig, ContentItem } from './types'
 import { PdfViewer } from './components/PdfViewer'
 import { MarkdownPanel } from './components/MarkdownPanel'
 import { SplitPane } from './components/SplitPane'
-import { Toolbar } from './components/Toolbar'
 import { useViewerStore } from './store'
 import debounce from 'lodash.debounce'
 
@@ -16,11 +15,11 @@ type TaskAssets = {
 
 const DEFAULT_TASK_ASSETS: TaskAssets = {
   pdf_url:
-    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/27893800-cd2e-459b-ab2e-721891df4a38/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13_origin.pdf',
+    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/6df20a4f-32c3-4771-bb72-0c191a0533e5/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13_origin.pdf',
   content_list_url:
-    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/27893800-cd2e-459b-ab2e-721891df4a38/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13_content_list.json',
+    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/6df20a4f-32c3-4771-bb72-0c191a0533e5/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13_content_list.json',
   full_md_link:
-    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/27893800-cd2e-459b-ab2e-721891df4a38/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13.md',
+    'https://spotlight.shanghai-9.zos.ctyun.cn/tasks/6df20a4f-32c3-4771-bb72-0c191a0533e5/vlm/Stabilizing Reinforcement Learning with LLMs-Formulation and Practices - 副本_13.md',
 }
 
 // 将绝对地址转换为 Vite 代理地址，避免 CORS。保持路径编码。
@@ -48,9 +47,19 @@ const buildViewerConfig = (assets: TaskAssets): ViewerConfig => {
 
 function App() {
   const [taskIdInput, setTaskIdInput] = useState(
-    '27893800-cd2e-459b-ab2e-721891df4a38', // 默认示例，方便调试
+    '6df20a4f-32c3-4771-bb72-0c191a0533e5', // 默认示例，方便调试
   )
   const [config, setConfig] = useState<ViewerConfig>(() => buildViewerConfig(DEFAULT_TASK_ASSETS))
+  const [fileInfo, setFileInfo] = useState<{ type: string; sizeText?: string }>(() => {
+    const parts = DEFAULT_TASK_ASSETS.pdf_url.split('.')
+    const ext = parts[parts.length - 1]?.toLowerCase() ?? ''
+    const type = ext === 'pdf' ? 'PDF' : ext.toUpperCase() || '文件'
+    return { type }
+  })
+  const [fileName, setFileName] = useState<string>(() => {
+    const parts = DEFAULT_TASK_ASSETS.pdf_url.split('/')
+    return decodeURIComponent(parts[parts.length - 1] || '')
+  })
   const [items, setItems] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -240,6 +249,26 @@ function App() {
       const nextConfig = buildViewerConfig(nextAssets)
 
       setConfig(nextConfig)
+      // 同步当前文件名，顶部展示
+      const parts = nextAssets.pdf_url.split('/')
+      setFileName(decodeURIComponent(parts[parts.length - 1] || ''))
+
+      // 更新左侧文件信息（类型 + 大小）
+      const nameParts = nextAssets.pdf_url.split('.')
+      const ext = nameParts[nameParts.length - 1]?.toLowerCase() ?? ''
+      const type = ext === 'pdf' ? 'PDF' : ext.toUpperCase() || '文件'
+      let sizeText: string | undefined
+      const sizeCandidate =
+        data.assets.size ||
+        data.assets.file_size ||
+        data.assets.pdf_size ||
+        data.assets.size_bytes ||
+        data.assets.bytes
+      if (typeof sizeCandidate === 'number' && sizeCandidate > 0) {
+        const kb = sizeCandidate / 1024
+        sizeText = kb >= 1024 ? `${(kb / 1024).toFixed(1)}MB` : `${kb.toFixed(1)}KB`
+      }
+      setFileInfo({ type, sizeText })
 
       await loadContentList(nextConfig, nextAssets)
     } catch (e) {
@@ -343,28 +372,34 @@ function App() {
       
       return targetPage
     } else {
-      // 对于Markdown，找到视口中心所在的块
-      interface Closest {
-        id: string
-        distance: number
-        page: number
-      }
-      let closest: Closest | null = null
+      // 对于Markdown，按页面分组元素（.md-page-group）来估算当前页，避免对每个内容块逐一测量，减少滚动时的布局计算开销
+      const groups = scrollContainer.querySelectorAll<HTMLElement>('.md-page-group')
+      if (!groups.length) return null
 
-      for (const item of sortedItems) {
-        const mdEl = document.getElementById(`md-${item.id}`)
-        if (!mdEl) continue
-
-        const rect = mdEl.getBoundingClientRect()
-        const blockCenter = rect.top + rect.height / 2
-        const distance = Math.abs(blockCenter - viewportCenter)
-
-        if (!closest || distance < closest.distance) {
-          closest = { id: item.id, distance, page: item.page_idx + 1 }
+      // 先尝试找到第一个底部超过视口中线的页面组
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i]
+        const rect = group.getBoundingClientRect()
+        if (rect.bottom > viewportCenter) {
+          // pageIndices 与渲染顺序一致：第 i 个组对应第 i+1 页
+          return i + 1
         }
       }
 
-      return closest ? closest.page : null
+      // 如果所有页面组的底部都在中线以上，则选择中心最接近中线的页面组
+      let closestPage = 1
+      let minDistance = Infinity
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i]
+        const rect = group.getBoundingClientRect()
+        const groupCenter = rect.top + rect.height / 2
+        const distance = Math.abs(groupCenter - viewportCenter)
+        if (distance < minDistance) {
+          minDistance = distance
+          closestPage = i + 1
+        }
+      }
+      return closestPage
     }
   }
 
@@ -524,7 +559,13 @@ function App() {
     return (
       <div className="page">
         <header className="header">
-          <h1>PDF + Markdown 双向联动演示</h1>
+          <div className="header-left">
+            <span className="app-logo">MinerU</span>
+            <h1 className="file-title" title={fileName}>
+              {fileName || '原始文件'}
+            </h1>
+          </div>
+          {/* 初始无数据时仍保留 task_id 输入与加载按钮，便于调试 */}
           <div className="task-input-row">
             <span>task_id：</span>
             <input
@@ -544,22 +585,36 @@ function App() {
   return (
     <div className="page">
       <header className="header">
-        <h1>PDF + Markdown 双向联动演示</h1>
-        <div className="task-input-row">
-          <span>task_id：</span>
-          <input
-            className="task-input"
-            value={taskIdInput}
-            onChange={(e) => setTaskIdInput(e.target.value)}
-            placeholder="请输入任务 ID"
-          />
-          <button onClick={fetchTask}>加载任务</button>
+        <div className="header-left">
+          <span className="app-logo">聚光知识库</span>
+          <h1 className="file-title" title={fileName}>
+            {fileName || '原始文件'}
+          </h1>
         </div>
-        <Toolbar items={filteredItems} onSave={() => alert('保存功能可在此扩展')} />
       </header>
       <div className="content-shell">
-        <div className="file-column-placeholder" />
+        <aside className="file-column">
+          <div className="file-column-header">文件</div>
+          <div className="file-list">
+            <div className="file-item file-item--active" title={fileName}>
+              <div className="file-item-main">
+                <div className="file-item-icon">{fileInfo.type.slice(0, 3)}</div>
+                <div className="file-item-text">
+                  <div className="file-item-title">{fileName || '当前文件'}</div>
+                  <div className="file-item-meta">
+                    {fileInfo.type}
+                    {fileInfo.sizeText ? ` · ${fileInfo.sizeText}` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
         <div className="main-pane">
+          <div className="pane-header">
+            <div className="pane-header-tab pane-header-tab--active">原文件</div>
+            <div className="pane-header-tab">Markdown</div>
+          </div>
           <SplitPane
             left={
               <div className="scroll-container" ref={pdfScrollRef}>
